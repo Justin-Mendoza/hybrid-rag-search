@@ -4,7 +4,7 @@ A production-style enterprise search and retrieval-augmented generation engine b
 
 The project is intentionally focused on the search system around the language model—not on building another generic “chat with a PDF” interface.
 
-> Status: specification complete; implementation has not started. The system is designed for reproducible local operation and will not be deployed as a public service.
+> Status: Day 1 scaffold implemented. The system is designed for reproducible local operation and will not be deployed as a public service.
 
 ## What the system will do
 
@@ -97,11 +97,24 @@ See the [GitHub issue backlog](https://github.com/Justin-Mendoza/hybrid-rag-sear
 
 - [Product and system specification](SPEC.md)
 
-Development commands and prerequisites will be added by the first implementation ticket. Until then, there is no runnable application in this repository.
+## Development
+
+Supported toolchain:
+
+- Python 3.12 or 3.13
+- Node.js 22 LTS and npm 10+
+- macOS on Apple Silicon is the reference environment; the Day 1 applications run natively. Day 2 will document container memory and architecture settings for PostgreSQL, Redis, and OpenSearch.
+
+For the complete local development environment, run `make dev`. It installs dependencies, starts the backend and frontend together, and opens `http://localhost:3000` in the default browser. Press Ctrl+C to stop both servers.
+
+To run the applications separately, use `make setup` once, followed by `make backend-dev` (API at `http://localhost:8000`) and `make frontend-dev` (web at `http://localhost:3000`). Run every CI quality gate with `make check`.
+
+Focused commands are available as `make format`, `make format-check`, `make lint`, `make typecheck`, `make test`, and `make build`. Copy `.env.example` to `.env` for local configuration; never commit credentials.
+
+See the [Day 1 implementation ticket](docs/tickets/day-01.md) for its outcome, scope, and acceptance criteria.
 
 ## Scope boundaries
 
 This project will not include cloud deployment, Kubernetes, live Slack or Discord connectors, real account authentication, source-native ACL synchronization, autonomous agents, or proprietary model training.
 
 The complete scope, success targets, design decisions, risks, and release definition are maintained in [SPEC.md](SPEC.md).
-

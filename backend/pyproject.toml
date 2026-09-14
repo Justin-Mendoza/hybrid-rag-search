@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hybrid-rag-search-api"
+version = "0.1.0"
+description = "API for Hybrid RAG Search"
+requires-python = ">=3.12,<3.14"
+dependencies = ["fastapi>=0.115,<1", "pydantic-settings>=2.7,<3", "uvicorn[standard]>=0.34,<1"]
+
+[project.optional-dependencies]
+dev = ["httpx>=0.28,<1", "mypy>=1.14,<2", "pre-commit>=4,<5", "pytest>=8.3,<9", "pytest-cov>=6,<7", "ruff>=0.9,<1"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hybrid_rag_search"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-config --strict-markers --cov=hybrid_rag_search --cov-report=term-missing --cov-fail-under=100"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["hybrid_rag_search"]
