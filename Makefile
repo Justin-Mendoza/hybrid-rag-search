@@ -1,4 +1,4 @@
-.PHONY: setup dev backend-dev frontend-dev stack-up stack-down stack-status stack-logs stack-reset format format-check lint typecheck test build check
+.PHONY: setup dev backend-dev frontend-dev stack-up stack-down stack-status stack-logs stack-reset db-upgrade db-downgrade db-current db-revision db-seed db-test format format-check lint typecheck test build check
 
 setup:
 	python3 -m venv .venv
@@ -42,6 +42,25 @@ stack-reset:
 		exit 1; \
 	fi
 	docker compose down --volumes --remove-orphans
+
+db-upgrade:
+	.venv/bin/alembic --config backend/alembic.ini upgrade head
+
+db-downgrade:
+	.venv/bin/alembic --config backend/alembic.ini downgrade -1
+
+db-current:
+	.venv/bin/alembic --config backend/alembic.ini current
+
+db-revision:
+	@test -n "$(MESSAGE)" || (printf '%s\n' 'Usage: make db-revision MESSAGE="describe change"'; exit 1)
+	.venv/bin/alembic --config backend/alembic.ini revision --autogenerate --message "$(MESSAGE)"
+
+db-seed:
+	.venv/bin/python -m hybrid_rag_search.seed
+
+db-test: db-upgrade
+	.venv/bin/pytest backend/tests/test_schema_integration.py -m integration --no-cov
 
 format:
 	.venv/bin/ruff format backend

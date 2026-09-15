@@ -8,6 +8,22 @@ permissions:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://hybrid_rag:ci-only@localhost:5432/hybrid_rag
+    services:
+      postgres:
+        image: postgres:17.11-alpine
+        env:
+          POSTGRES_DB: hybrid_rag
+          POSTGRES_PASSWORD: ci-only
+          POSTGRES_USER: hybrid_rag
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hybrid_rag -d hybrid_rag"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     strategy:
       matrix:
         python-version: ["3.12", "3.13"]
@@ -23,6 +39,13 @@ jobs:
       - run: ruff check backend
       - run: mypy backend/src
       - run: pytest backend
+      - run: alembic --config backend/alembic.ini upgrade head
+      - run: alembic --config backend/alembic.ini check
+      - run: alembic --config backend/alembic.ini downgrade base
+      - run: alembic --config backend/alembic.ini upgrade head
+      - run: python -m hybrid_rag_search.seed
+      - run: python -m hybrid_rag_search.seed
+      - run: pytest backend/tests/test_schema_integration.py -m integration --no-cov
   frontend:
     runs-on: ubuntu-latest
     steps:

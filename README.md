@@ -4,7 +4,7 @@ A production-style enterprise search and retrieval-augmented generation engine b
 
 The project is intentionally focused on the search system around the language model—not on building another generic “chat with a PDF” interface.
 
-> Status: Day 2 local container environment implemented. The system is designed for reproducible local operation and will not be deployed as a public service.
+> Status: Day 3 PostgreSQL schema and migration foundation implemented. The system is designed for reproducible local operation and will not be deployed as a public service.
 
 ## What the system will do
 
@@ -127,6 +127,19 @@ Use `make stack-status` to inspect health and `make stack-logs` to follow recent
 To deliberately erase PostgreSQL, Redis, OpenSearch, application storage, frontend dependencies, and the Next.js cache, run `make stack-reset CONFIRM=1`. The command refuses to delete anything without that flag. OpenSearch security is disabled in this local-only environment and must not be exposed beyond loopback.
 
 See the [Day 2 implementation ticket](docs/tickets/day-02.md) for its outcome, scope, decisions, and verification evidence.
+
+### Database schema
+
+With PostgreSQL running, apply all schema migrations and load deterministic development records:
+
+```bash
+make db-upgrade
+make db-seed
+```
+
+Use `make db-current` to show the applied revision and `make db-test` to run the real-PostgreSQL constraint suite. `make db-downgrade` reverses one revision and may delete data owned by that revision, so use it only when intentionally testing or revising the schema.
+
+The seed command is idempotent. Re-running it reuses the same Acme Demo tenant, owner, Company Handbook collection, and managing grant. Schema history and the complete data-model decisions are documented in the [Day 3 implementation ticket](docs/tickets/day-03.md).
 
 ## Scope boundaries
 
