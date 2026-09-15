@@ -12,6 +12,7 @@ __pycache__/
 htmlcov/
 .coverage
 .cache/
+.data/
 node_modules/
 .next/
 coverage/
