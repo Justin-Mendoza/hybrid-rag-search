@@ -23,6 +23,8 @@ For each ticket:
 - Use small diagrams, request/response examples, or data-flow examples when they make a relationship easier to understand.
 - Surface assumptions and tradeoffs instead of silently selecting defaults.
 - Distinguish clearly between product decisions, architectural decisions, and implementation details.
+- Present proposed choices one at a time rather than as a batch. For each choice, give brief context about what it controls, explain the main tradeoff in plain language, make a recommendation, and wait for the owner's response before introducing the next choice.
+- Keep decision context concise: usually one short paragraph or a few bullets. Add more depth only when the owner asks for it.
 - Explain test failures and fixes rather than only reporting that checks pass.
 - At each checkpoint, give the owner one or two useful things to inspect or try locally.
 - Ask short, focused questions. Do not turn every minor naming or formatting choice into an approval request.
@@ -44,6 +46,8 @@ Pause before:
 - changing authorization or tenant-isolation behavior;
 - making a decision that constrains later tickets;
 - moving from one major acceptance criterion to the next.
+
+When several decisions are needed, do not preview or request approval for all of them at once. Resolve the first decision completely, record the outcome, and then explain the next decision.
 
 Routine read-only inspection, formatting, linting, and focused tests may run without a pause.
 

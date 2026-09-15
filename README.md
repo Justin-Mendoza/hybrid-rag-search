@@ -4,7 +4,7 @@ A production-style enterprise search and retrieval-augmented generation engine b
 
 The project is intentionally focused on the search system around the language model—not on building another generic “chat with a PDF” interface.
 
-> Status: Day 1 scaffold implemented. The system is designed for reproducible local operation and will not be deployed as a public service.
+> Status: Day 2 local container environment implemented. The system is designed for reproducible local operation and will not be deployed as a public service.
 
 ## What the system will do
 
@@ -103,7 +103,7 @@ Supported toolchain:
 
 - Python 3.12 or 3.13
 - Node.js 22 LTS and npm 10+
-- macOS on Apple Silicon is the reference environment; the Day 1 applications run natively. Day 2 will document container memory and architecture settings for PostgreSQL, Redis, and OpenSearch.
+- macOS on Apple Silicon with Docker Desktop is the reference environment. Allocate at least 4 GB of memory to Docker Desktop; OpenSearch uses a configurable 512 MB JVM heap by default.
 
 For the complete local development environment, run `make dev`. It installs dependencies, starts the backend and frontend together, and opens `http://localhost:3000` in the default browser. Press Ctrl+C to stop both servers.
 
@@ -111,7 +111,22 @@ To run the applications separately, use `make setup` once, followed by `make bac
 
 Focused commands are available as `make format`, `make format-check`, `make lint`, `make typecheck`, `make test`, and `make build`. Copy `.env.example` to `.env` for local configuration; never commit credentials.
 
-See the [Day 1 implementation ticket](docs/tickets/day-01.md) for its outcome, scope, and acceptance criteria.
+### Docker Compose environment
+
+Run `make stack-up` to build and start the complete six-service environment. The command waits until the frontend, API, worker, PostgreSQL, Redis, and OpenSearch health checks pass.
+
+- Frontend: `http://127.0.0.1:3000`
+- API: `http://127.0.0.1:8000`
+- PostgreSQL: `127.0.0.1:5432`
+- Redis: `127.0.0.1:6379`
+- OpenSearch: `http://127.0.0.1:9200`
+- OpenSearch metrics: `http://127.0.0.1:9600`
+
+Use `make stack-status` to inspect health and `make stack-logs` to follow recent logs. `make stack-down` removes the containers and network but preserves all named-volume data, so the next `make stack-up` restores it.
+
+To deliberately erase PostgreSQL, Redis, OpenSearch, application storage, frontend dependencies, and the Next.js cache, run `make stack-reset CONFIRM=1`. The command refuses to delete anything without that flag. OpenSearch security is disabled in this local-only environment and must not be exposed beyond loopback.
+
+See the [Day 2 implementation ticket](docs/tickets/day-02.md) for its outcome, scope, decisions, and verification evidence.
 
 ## Scope boundaries
 
