@@ -7,10 +7,18 @@ name = "hybrid-rag-search-api"
 version = "0.1.0"
 description = "API for Hybrid RAG Search"
 requires-python = ">=3.12,<3.14"
-dependencies = ["fastapi>=0.115,<1", "pydantic-settings>=2.7,<3", "uvicorn[standard]>=0.34,<1"]
+dependencies = [
+  "asyncpg>=0.30,<1",
+  "dramatiq[redis]>=2,<3",
+  "fastapi>=0.115,<1",
+  "httpx>=0.28,<1",
+  "pydantic-settings>=2.7,<3",
+  "redis>=6,<7",
+  "uvicorn[standard]>=0.34,<1",
+]
 
 [project.optional-dependencies]
-dev = ["httpx>=0.28,<1", "mypy>=1.14,<2", "pre-commit>=4,<5", "pytest>=8.3,<9", "pytest-cov>=6,<7", "ruff>=0.9,<1"]
+dev = ["mypy>=1.14,<2", "pre-commit>=4,<5", "pytest>=8.3,<9", "pytest-cov>=6,<7", "ruff>=0.9,<1"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/hybrid_rag_search"]

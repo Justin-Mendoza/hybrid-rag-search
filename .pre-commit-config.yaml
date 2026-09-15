@@ -15,5 +15,4 @@ repos:
         name: Prettier check
         entry: npm --prefix frontend exec -- prettier --check
         language: system
-        files: ^frontend/
-        exclude: ^frontend/\.prettierignore$
+        files: ^frontend/.*\.(css|js|jsx|json|md|mjs|ts|tsx|yaml|yml)$

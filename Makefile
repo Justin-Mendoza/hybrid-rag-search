@@ -1,4 +1,4 @@
-.PHONY: setup dev backend-dev frontend-dev format format-check lint typecheck test build check
+.PHONY: setup dev backend-dev frontend-dev stack-up stack-down stack-status stack-logs stack-reset format format-check lint typecheck test build check
 
 setup:
 	python3 -m venv .venv
@@ -23,6 +23,25 @@ backend-dev:
 
 frontend-dev:
 	npm --prefix frontend run dev
+
+stack-up:
+	docker compose up --build --detach --wait
+
+stack-down:
+	docker compose down
+
+stack-status:
+	docker compose ps
+
+stack-logs:
+	docker compose logs --follow --tail=100
+
+stack-reset:
+	@if [ "$(CONFIRM)" != "1" ]; then \
+		printf '%s\n' 'Refusing to delete local stack data.' 'Run: make stack-reset CONFIRM=1'; \
+		exit 1; \
+	fi
+	docker compose down --volumes --remove-orphans
 
 format:
 	.venv/bin/ruff format backend
