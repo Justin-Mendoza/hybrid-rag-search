@@ -1,0 +1,19 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: Ruff check
+        entry: .venv/bin/ruff check --fix
+        language: system
+        types: [python]
+      - id: ruff-format
+        name: Ruff format
+        entry: .venv/bin/ruff format
+        language: system
+        types: [python]
+      - id: prettier-check
+        name: Prettier check
+        entry: npm --prefix frontend exec -- prettier --check
+        language: system
+        files: ^frontend/
+        exclude: ^frontend/\.prettierignore$
