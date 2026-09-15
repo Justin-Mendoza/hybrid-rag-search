@@ -52,6 +52,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-hybrid_rag}:${POSTGRES_PASSWORD:-local-development-only}@postgres:5432/${POSTGRES_DB:-hybrid_rag}
       OPENSEARCH_URL: http://opensearch:9200
       REDIS_URL: redis://redis:6379/0
+      STORAGE_ROOT: /app/data/originals
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     volumes:

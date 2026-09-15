@@ -60,7 +60,7 @@ db-seed:
 	.venv/bin/python -m hybrid_rag_search.seed
 
 db-test: db-upgrade
-	.venv/bin/pytest backend/tests/test_schema_integration.py -m integration --no-cov
+	.venv/bin/pytest backend -m integration --no-cov
 
 format:
 	.venv/bin/ruff format backend

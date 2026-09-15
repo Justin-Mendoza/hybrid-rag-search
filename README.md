@@ -4,7 +4,7 @@ A production-style enterprise search and retrieval-augmented generation engine b
 
 The project is intentionally focused on the search system around the language model—not on building another generic “chat with a PDF” interface.
 
-> Status: Day 3 PostgreSQL schema and migration foundation implemented. The system is designed for reproducible local operation and will not be deployed as a public service.
+> Status: Day 4 local original-file storage and document lifecycle implemented. The system is designed for reproducible local operation and will not be deployed as a public service.
 
 ## What the system will do
 
@@ -142,6 +142,13 @@ Use `make db-current` to show the applied revision and `make db-test` to run the
 The seed command is idempotent. Re-running it reuses the same Acme Demo tenant, owner, Company Handbook collection, and managing grant. Schema history and the complete data-model decisions are documented in the [Day 3 implementation ticket](docs/tickets/day-03.md).
 
 ## Scope boundaries
+
+Original uploads use the replaceable `FileStorage` interface and `DocumentService`.
+Bytes live under `STORAGE_ROOT` (`.data/originals` locally, `/app/data/originals` in
+the shared Compose volume); PostgreSQL stores their hash, size, media type, and
+lifecycle. See the [Day 4 usage and recovery notes](docs/tickets/day-04.md).
+`make db-test` now verifies document storage and lifecycle against PostgreSQL as
+well as schema constraints.
 
 This project will not include cloud deployment, Kubernetes, live Slack or Discord connectors, real account authentication, source-native ACL synchronization, autonomous agents, or proprietary model training.
 

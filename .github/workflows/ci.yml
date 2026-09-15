@@ -45,7 +45,7 @@ jobs:
       - run: alembic --config backend/alembic.ini upgrade head
       - run: python -m hybrid_rag_search.seed
       - run: python -m hybrid_rag_search.seed
-      - run: pytest backend/tests/test_schema_integration.py -m integration --no-cov
+      - run: pytest backend -m integration --no-cov
   frontend:
     runs-on: ubuntu-latest
     steps:
