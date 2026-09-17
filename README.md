@@ -4,7 +4,7 @@ A production-style enterprise search and retrieval-augmented generation engine b
 
 The project is intentionally focused on the search system around the language model—not on building another generic “chat with a PDF” interface.
 
-> Status: Day 4 local original-file storage and document lifecycle implemented. The system is designed for reproducible local operation and will not be deployed as a public service.
+> Status: Day 5 model-provider boundaries, deterministic fakes, and usage accounting implemented. The system is designed for reproducible local operation and will not be deployed as a public service.
 
 ## What the system will do
 
@@ -110,6 +110,21 @@ For the complete local development environment, run `make dev`. It installs depe
 To run the applications separately, use `make setup` once, followed by `make backend-dev` (API at `http://localhost:8000`) and `make frontend-dev` (web at `http://localhost:3000`). Run every CI quality gate with `make check`.
 
 Focused commands are available as `make format`, `make format-check`, `make lint`, `make typecheck`, `make test`, and `make build`. Copy `.env.example` to `.env` for local configuration; never commit credentials.
+
+### Model providers
+
+The backend calls Cohere through typed embedding, reranking, and generation
+interfaces. Production adapters use the official async Cohere SDK, while normal
+tests and load tests use deterministic fakes. This keeps application code
+independent of the vendor SDK and makes routine verification reproducible and
+free of provider usage.
+
+The current baselines are `embed-english-light-v3.0`, `rerank-v4.0-fast`, and
+`command-r7b-12-2024`. Live smoke tests are excluded from normal `pytest`,
+`make test`, `make check`, and CI runs. After configuring `COHERE_API_KEY` or its
+supported `COHERE_TRIAL_KEY` alias, explicitly authorize the three-call smoke
+suite with `make cohere-smoke`. See the [Day 5 implementation notes](docs/tickets/day-05.md)
+for model decisions, usage metadata, error behavior, and verification evidence.
 
 ### Docker Compose environment
 
