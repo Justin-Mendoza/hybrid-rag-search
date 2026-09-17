@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Hidden browser title</title>
+    <style>.secret { display: none; }</style>
+    <script>do_not_index()</script>
+  </head>
+  <body>
+    <h1>Employee &amp; Contractor Handbook</h1>
+    <p>Welcome to <strong>Acme</strong>.<br>Read the policy.</p>
+    <section>
+      <h2>Remote Work</h2>
+      <ul>
+        <li>Employees may work remotely.</li>
+        <li>Manager <em>approval</em> is required.</li>
+      </ul>
+      <h3>Example</h3>
+      <pre>days = 3
+location = "home"</pre>
+    </section>
+    <h2>Security</h2>
+    Loose visible text.
+    <div hidden>hidden attribute text</div>
+    <div aria-hidden="true">aria hidden text</div>
+    <noscript>noscript fallback</noscript>
+    <template>template content</template>
+  </body>
+</html>
