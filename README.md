@@ -4,7 +4,7 @@ A production-style enterprise search and retrieval-augmented generation engine b
 
 The project is intentionally focused on the search system around the language model—not on building another generic “chat with a PDF” interface.
 
-> Status: Day 5 model-provider boundaries, deterministic fakes, and usage accounting implemented. The system is designed for reproducible local operation and will not be deployed as a public service.
+> Status: Day 6 deterministic, source-aware document parsing implemented. The system is designed for reproducible local operation and will not be deployed as a public service.
 
 ## What the system will do
 
@@ -125,6 +125,20 @@ The current baselines are `embed-english-light-v3.0`, `rerank-v4.0-fast`, and
 supported `COHERE_TRIAL_KEY` alias, explicitly authorize the three-call smoke
 suite with `make cohere-smoke`. See the [Day 5 implementation notes](docs/tickets/day-05.md)
 for model decisions, usage metadata, error behavior, and verification evidence.
+
+### Document parsing
+
+The backend parses PDF, Markdown, HTML, and plain-text originals into one shared
+sequence of normalized text blocks. Blocks retain one-based PDF pages or nested
+heading paths when available, giving later chunking and citations a stable source
+location without exposing format-specific parser objects.
+
+Parsing is deterministic and local: no Cohere calls, database writes, worker
+messages, or OpenSearch indexing occur in this stage. HTML scripts/styles and
+hidden content are excluded; encrypted, corrupt, unsupported, or textless inputs
+produce stable safe errors. PDF extraction handles embedded text only—OCR and
+layout reconstruction remain out of scope. See the [Day 6 implementation notes](docs/tickets/day-06.md)
+for the block contract, normalization rules, and format-specific behavior.
 
 ### Docker Compose environment
 
