@@ -1,4 +1,4 @@
-.PHONY: setup dev backend-dev frontend-dev stack-up stack-down stack-status stack-logs stack-reset db-upgrade db-downgrade db-current db-revision db-seed db-test cohere-smoke format format-check lint typecheck test build check
+.PHONY: setup dev backend-dev frontend-dev stack-up stack-down stack-status stack-logs stack-reset db-upgrade db-downgrade db-current db-revision db-seed db-test tokenizer-setup cohere-smoke format format-check lint typecheck test build check
 
 setup:
 	python3 -m venv .venv
@@ -61,6 +61,9 @@ db-seed:
 
 db-test: db-upgrade
 	.venv/bin/pytest backend -m integration --no-cov
+
+tokenizer-setup:
+	.venv/bin/python -m hybrid_rag_search.tokenizer_setup
 
 cohere-smoke:
 	RUN_LIVE_COHERE_TESTS=1 .venv/bin/pytest backend/tests/test_cohere_live.py -m live --no-cov -s
