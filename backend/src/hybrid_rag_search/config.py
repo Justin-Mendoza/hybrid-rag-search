@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     opensearch_url: str = "http://localhost:9200"
     storage_root: Path = Path(".data/originals")
+    tokenizer_root: Path = Path(".data/tokenizers")
     cohere_api_key: SecretStr | None = Field(
         default=None,
         validation_alias=AliasChoices("COHERE_API_KEY", "COHERE_TRIAL_KEY"),
