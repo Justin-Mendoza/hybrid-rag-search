@@ -53,6 +53,9 @@ services:
       OPENSEARCH_URL: http://opensearch:9200
       REDIS_URL: redis://redis:6379/0
       STORAGE_ROOT: /app/data/originals
+      TOKENIZER_ROOT: /app/data/tokenizers
+      INGESTION_ARTIFACT_ROOT: /app/data/ingestion-artifacts
+      COHERE_TRIAL_KEY: ${COHERE_TRIAL_KEY:-}
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     volumes:

@@ -43,6 +43,14 @@ class IngestionJobStatus(enum.StrEnum):
     CANCELLED = "cancelled"
 
 
+class IngestionStage(enum.StrEnum):
+    PARSE = "parse"
+    CHUNK = "chunk"
+    EMBED = "embed"
+    INDEX = "index"
+    COMPLETE = "complete"
+
+
 class Collection(Base):
     __tablename__ = "collections"
 
@@ -151,7 +159,10 @@ class IngestionJob(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
     document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    content_hash: Mapped[str] = mapped_column(Text)
+    pipeline_version: Mapped[str] = mapped_column(Text)
     status: Mapped[str] = mapped_column(Text, server_default=IngestionJobStatus.QUEUED.value)
+    stage: Mapped[str] = mapped_column(Text, server_default=IngestionStage.PARSE.value)
     attempts: Mapped[int] = mapped_column(Integer, server_default="0")
     max_attempts: Mapped[int] = mapped_column(Integer, server_default="3")
     checkpoint: Mapped[dict[str, object]] = mapped_column(JSONB, server_default=text("'{}'::jsonb"))
@@ -159,6 +170,9 @@ class IngestionJob(Base):
     error_message: Mapped[str | None] = mapped_column(Text)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    lease_token: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -170,12 +184,42 @@ class IngestionJob(Base):
             ["documents.tenant_id", "documents.id"],
             ondelete="CASCADE",
         ),
+        UniqueConstraint(
+            "tenant_id",
+            "document_id",
+            "content_hash",
+            "pipeline_version",
+            name="uq_ingestion_jobs_document_recipe",
+        ),
+        CheckConstraint("content_hash ~ '^[0-9a-f]{64}$'", name="content_hash_sha256"),
+        CheckConstraint(
+            "pipeline_version ~ '^pipe_[0-9a-f]{64}$'",
+            name="pipeline_version_format",
+        ),
         CheckConstraint(
             "status IN ('queued', 'running', 'succeeded', 'failed', 'cancelled')",
             name="status_allowed",
+        ),
+        CheckConstraint(
+            "stage IN ('parse', 'chunk', 'embed', 'index', 'complete')",
+            name="stage_allowed",
+        ),
+        CheckConstraint(
+            "(status = 'succeeded') = (stage = 'complete')",
+            name="completion_matches_status",
+        ),
+        CheckConstraint(
+            "(status = 'running') = (lease_token IS NOT NULL AND lease_expires_at IS NOT NULL)",
+            name="lease_matches_running",
+        ),
+        CheckConstraint(
+            "next_attempt_at IS NULL OR status = 'queued'",
+            name="retry_time_requires_queued",
         ),
         CheckConstraint("attempts >= 0", name="attempts_nonnegative"),
         CheckConstraint("max_attempts > 0", name="max_attempts_positive"),
         CheckConstraint("attempts <= max_attempts", name="attempts_within_limit"),
         Index("ix_ingestion_jobs_tenant_status", "tenant_id", "status"),
+        Index("ix_ingestion_jobs_status_lease", "status", "lease_expires_at"),
+        Index("ix_ingestion_jobs_status_retry", "status", "next_attempt_at"),
     )
