@@ -11,6 +11,7 @@ from hybrid_rag_search.models import (
     EvaluationRunStatus,
     IngestionJob,
     IngestionJobStatus,
+    IngestionStage,
     Judgment,
     JudgmentTarget,
     Membership,
@@ -72,6 +73,28 @@ def test_content_models_register_expected_tables_and_states() -> None:
         "succeeded",
         "failed",
         "cancelled",
+    }
+    assert {stage.value for stage in IngestionStage} == {
+        "parse",
+        "chunk",
+        "embed",
+        "index",
+        "complete",
+    }
+    assert str(IngestionJob.__table__.c.stage.server_default.arg) == "parse"
+    constraint_names = {constraint.name for constraint in IngestionJob.__table__.constraints}
+    assert "ck_ingestion_jobs_stage_allowed" in constraint_names
+    assert "ck_ingestion_jobs_completion_matches_status" in constraint_names
+    assert "ck_ingestion_jobs_content_hash_sha256" in constraint_names
+    assert "ck_ingestion_jobs_pipeline_version_format" in constraint_names
+    assert "uq_ingestion_jobs_document_recipe" in constraint_names
+    assert "ck_ingestion_jobs_lease_matches_running" in constraint_names
+    assert "ck_ingestion_jobs_retry_time_requires_queued" in constraint_names
+    assert "ix_ingestion_jobs_status_lease" in {
+        index.name for index in IngestionJob.__table__.indexes
+    }
+    assert "ix_ingestion_jobs_status_retry" in {
+        index.name for index in IngestionJob.__table__.indexes
     }
 
 
