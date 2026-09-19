@@ -6,6 +6,7 @@ from hybrid_rag_search.models.content import (
     DocumentStatus,
     IngestionJob,
     IngestionJobStatus,
+    IngestionStage,
 )
 from hybrid_rag_search.models.evaluation import (
     AuditEvent,
@@ -28,6 +29,7 @@ __all__ = [
     "EvaluationRun",
     "EvaluationRunStatus",
     "IngestionJob",
+    "IngestionStage",
     "IngestionJobStatus",
     "Judgment",
     "JudgmentTarget",

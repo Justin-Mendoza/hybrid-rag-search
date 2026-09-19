@@ -16,6 +16,7 @@ async def test_postgres_rejects_core_constraint_violations() -> None:
     tenant_a, tenant_b, user_id = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
     membership_id, collection_a, collection_b = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
     dataset_id = uuid.uuid4()
+    document_id = uuid.uuid4()
 
     try:
         await connection.executemany(
@@ -84,6 +85,61 @@ async def test_postgres_rejects_core_constraint_violations() -> None:
                     uuid.uuid4(),
                     tenant_a,
                     collection_a,
+                )
+
+        await connection.execute(
+            "INSERT INTO documents "
+            "(id, tenant_id, collection_id, source_key, storage_key, original_filename, "
+            "media_type, content_hash, size_bytes) "
+            "VALUES ($1, $2, $3, 'valid-source', 'valid-storage', 'file.txt', "
+            "'text/plain', $4, 1)",
+            document_id,
+            tenant_a,
+            collection_a,
+            "b" * 64,
+        )
+        job_id = uuid.uuid4()
+        pipeline_version = "pipe_" + "c" * 64
+        await connection.execute(
+            "INSERT INTO ingestion_jobs "
+            "(id, tenant_id, document_id, content_hash, pipeline_version) "
+            "VALUES ($1, $2, $3, $4, $5)",
+            job_id,
+            tenant_a,
+            document_id,
+            "b" * 64,
+            pipeline_version,
+        )
+        assert (
+            await connection.fetchval("SELECT stage FROM ingestion_jobs WHERE id = $1", job_id)
+            == "parse"
+        )
+
+        with pytest.raises(asyncpg.CheckViolationError):
+            async with connection.transaction():
+                await connection.execute(
+                    "UPDATE ingestion_jobs SET stage = 'unknown' WHERE id = $1",
+                    job_id,
+                )
+
+        with pytest.raises(asyncpg.CheckViolationError):
+            async with connection.transaction():
+                await connection.execute(
+                    "UPDATE ingestion_jobs SET status = 'succeeded' WHERE id = $1",
+                    job_id,
+                )
+
+        with pytest.raises(asyncpg.UniqueViolationError):
+            async with connection.transaction():
+                await connection.execute(
+                    "INSERT INTO ingestion_jobs "
+                    "(id, tenant_id, document_id, content_hash, pipeline_version) "
+                    "VALUES ($1, $2, $3, $4, $5)",
+                    uuid.uuid4(),
+                    tenant_a,
+                    document_id,
+                    "b" * 64,
+                    pipeline_version,
                 )
 
         with pytest.raises(asyncpg.CheckViolationError):
