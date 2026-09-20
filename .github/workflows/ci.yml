@@ -11,6 +11,20 @@ jobs:
     env:
       DATABASE_URL: postgresql://hybrid_rag:ci-only@localhost:5432/hybrid_rag
     services:
+      opensearch:
+        image: opensearchproject/opensearch:3.6.0
+        env:
+          discovery.type: single-node
+          DISABLE_INSTALL_DEMO_CONFIG: "true"
+          DISABLE_SECURITY_PLUGIN: "true"
+          OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+        ports:
+          - 9200:9200
+        options: >-
+          --health-cmd "curl --silent --fail http://localhost:9200/_cluster/health?wait_for_status=yellow"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
       postgres:
         image: postgres:17.11-alpine
         env:
