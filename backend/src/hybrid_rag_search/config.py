@@ -15,9 +15,14 @@ class Settings(BaseSettings):
     database_url: str = "postgresql://hybrid_rag:local-development-only@localhost:5432/hybrid_rag"
     redis_url: str = "redis://localhost:6379/0"
     opensearch_url: str = "http://localhost:9200"
-    opensearch_index_schema_version: str = "chunks-v1"
+    opensearch_index_schema_version: str = "chunks-v2"
     opensearch_read_alias: str = "hybrid-rag-chunks-read"
     opensearch_write_alias: str = "hybrid-rag-chunks-write"
+    opensearch_bm25_content_boost: float = Field(default=1.0, gt=0)
+    opensearch_bm25_heading_boost: float = Field(default=1.5, gt=0)
+    opensearch_bm25_phrase_boost: float = Field(default=3.0, gt=0)
+    opensearch_bm25_identifier_boost: float = Field(default=5.0, gt=0)
+    opensearch_bm25_candidate_limit: int = Field(default=20, gt=0)
     storage_root: Path = Path(".data/originals")
     tokenizer_root: Path = Path(".data/tokenizers")
     ingestion_artifact_root: Path = Path(".data/ingestion-artifacts")

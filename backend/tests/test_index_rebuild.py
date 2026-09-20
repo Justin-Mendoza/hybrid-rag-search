@@ -43,7 +43,7 @@ async def test_start_rebuild_creates_target_and_enqueues_documents(
     documents = ((uuid4(), uuid4()), (uuid4(), uuid4()))
     manager, engine, jobs = dependencies(monkeypatch, documents=documents)
     result = await index_rebuild.start_rebuild(Settings(), "build-1")
-    assert result == RebuildStartResult("hybrid-rag-chunks-v1-build-1", 2)
+    assert result == RebuildStartResult("hybrid-rag-chunks-v2-build-1", 2)
     manager.create.assert_awaited_once_with(result.index_name)
     manager.point_write_alias.assert_awaited_once_with(result.index_name)
     assert jobs.enqueue_document.await_count == 2
