@@ -98,6 +98,15 @@ After executing the approved plan, summarize:
 
 Do not describe a ticket as complete until every acceptance criterion has been verified or explicitly deferred.
 
+## Pull request handoff
+
+When opening a pull request, include a small plain-text or Mermaid design-flow
+diagram in the PR description whenever it would make the implemented control or
+data flow easier to understand. The diagram should show the capability that was
+actually built, use the project's existing terms, and stay compact enough to
+scan alongside the summary. Skip it for trivial changes where prose already
+communicates the flow clearly.
+
 ## Teaching depth
 
 Assume the owner is technically curious and wants engineering-level understanding, but may not know every tool in this stack. Start with the mental model, then add implementation detail. Prefer explaining a small amount at the moment it becomes relevant over delivering a large tutorial after all code is written.
