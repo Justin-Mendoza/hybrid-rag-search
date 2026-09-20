@@ -1,4 +1,4 @@
-.PHONY: setup dev backend-dev frontend-dev stack-up stack-down stack-status stack-logs stack-reset db-upgrade db-downgrade db-current db-revision db-seed db-test tokenizer-setup ingestion-recover cohere-smoke format format-check lint typecheck test build check
+.PHONY: setup dev backend-dev frontend-dev stack-up stack-down stack-status stack-logs stack-reset db-upgrade db-downgrade db-current db-revision db-seed db-test tokenizer-setup ingestion-recover index-rebuild-start index-rebuild-promote cohere-smoke format format-check lint typecheck test build check
 
 setup:
 	python3 -m venv .venv
@@ -67,6 +67,14 @@ tokenizer-setup:
 
 ingestion-recover:
 	.venv/bin/python -m hybrid_rag_search.ingestion_recovery
+
+index-rebuild-start:
+	@test -n "$(BUILD_ID)" || (printf '%s\n' 'Usage: make index-rebuild-start BUILD_ID=20260920'; exit 1)
+	.venv/bin/python -m hybrid_rag_search.index_rebuild start "$(BUILD_ID)"
+
+index-rebuild-promote:
+	@test -n "$(INDEX)" || (printf '%s\n' 'Usage: make index-rebuild-promote INDEX=hybrid-rag-chunks-v2-20260920'; exit 1)
+	.venv/bin/python -m hybrid_rag_search.index_rebuild promote "$(INDEX)"
 
 cohere-smoke:
 	RUN_LIVE_COHERE_TESTS=1 .venv/bin/pytest backend/tests/test_cohere_live.py -m live --no-cov -s

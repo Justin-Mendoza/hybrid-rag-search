@@ -52,7 +52,7 @@ def configured_pipeline_version(settings: Settings) -> str:
         embedding_dimensions=settings.cohere_embed_dimensions,
         embedding_input_type="search_document",
         embedding_type="float",
-        index_schema_version="search-document-v1",
+        index_schema_version=settings.opensearch_index_schema_version,
     ).version
 
 

@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     database_url: str = "postgresql://hybrid_rag:local-development-only@localhost:5432/hybrid_rag"
     redis_url: str = "redis://localhost:6379/0"
     opensearch_url: str = "http://localhost:9200"
+    opensearch_index_schema_version: str = "chunks-v1"
+    opensearch_read_alias: str = "hybrid-rag-chunks-read"
+    opensearch_write_alias: str = "hybrid-rag-chunks-write"
     storage_root: Path = Path(".data/originals")
     tokenizer_root: Path = Path(".data/tokenizers")
     ingestion_artifact_root: Path = Path(".data/ingestion-artifacts")

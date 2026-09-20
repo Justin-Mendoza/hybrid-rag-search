@@ -10,14 +10,18 @@ from dramatiq import Broker, Middleware, Worker
 from dramatiq.brokers.redis import RedisBroker
 
 from hybrid_rag_search.config import get_settings
-from hybrid_rag_search.ingestion.indexing import FakeDocumentIndex
 from hybrid_rag_search.ingestion.recovery import RecoveryRunResult
 from hybrid_rag_search.ingestion.runtime import run_configured_job, run_configured_recovery
+from hybrid_rag_search.opensearch_index import OpenSearchDocumentIndex
 
 settings = get_settings()
 broker = RedisBroker(url=settings.redis_url)
 dramatiq.set_broker(broker)
-document_index = FakeDocumentIndex()
+document_index = OpenSearchDocumentIndex(
+    settings.opensearch_url,
+    settings.opensearch_write_alias,
+    settings.cohere_embed_dimensions,
+)
 
 
 @dramatiq.actor(max_retries=0)
