@@ -1,4 +1,4 @@
-.PHONY: setup dev backend-dev frontend-dev stack-up stack-down stack-status stack-logs stack-reset db-upgrade db-downgrade db-current db-revision db-seed db-test tokenizer-setup ingestion-recover index-rebuild-start index-rebuild-promote cohere-smoke format format-check lint typecheck test build check
+.PHONY: setup dev backend-dev frontend-dev stack-up stack-down stack-status stack-logs stack-reset db-upgrade db-downgrade db-current db-revision db-seed db-test tokenizer-setup ingestion-recover index-rebuild-start index-rebuild-promote opensearch-lexical-test cohere-smoke format format-check lint typecheck test build check
 
 setup:
 	python3 -m venv .venv
@@ -75,6 +75,9 @@ index-rebuild-start:
 index-rebuild-promote:
 	@test -n "$(INDEX)" || (printf '%s\n' 'Usage: make index-rebuild-promote INDEX=hybrid-rag-chunks-v2-20260920'; exit 1)
 	.venv/bin/python -m hybrid_rag_search.index_rebuild promote "$(INDEX)"
+
+opensearch-lexical-test:
+	.venv/bin/pytest backend/tests/test_lexical_retrieval_integration.py -m integration --no-cov
 
 cohere-smoke:
 	RUN_LIVE_COHERE_TESTS=1 .venv/bin/pytest backend/tests/test_cohere_live.py -m live --no-cov -s

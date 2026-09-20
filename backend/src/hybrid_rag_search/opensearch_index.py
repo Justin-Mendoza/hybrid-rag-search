@@ -15,6 +15,16 @@ from hybrid_rag_search.ingestion.indexing import (
 )
 
 _SCHEMA_VERSION = re.compile(r"^[a-z][a-z0-9-]*v[0-9]+$")
+_IDENTIFIER = re.compile(
+    r"(?<![A-Za-z0-9])(?=[A-Za-z0-9_-]*[A-Za-z])(?=[A-Za-z0-9_-]*[0-9])"
+    r"[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)+(?![A-Za-z0-9])"
+)
+
+
+def extract_identifiers(text: str) -> tuple[str, ...]:
+    """Extract stable, case-normalized identifier tokens from chunk text."""
+
+    return tuple(dict.fromkeys(match.group(0).casefold() for match in _IDENTIFIER.finditer(text)))
 
 
 def physical_index_name(schema_version: str, build_id: str) -> str:
@@ -39,6 +49,8 @@ def index_mapping(dimensions: int) -> dict[str, object]:
             "properties": {
                 "chunk_id": {"type": "keyword"},
                 "content_text": {"type": "text"},
+                "heading_text": {"type": "text"},
+                "identifiers": {"type": "keyword"},
                 "document_content_id": {"type": "keyword"},
                 "document_id": {"type": "keyword"},
                 "tenant_id": {"type": "keyword"},
@@ -174,6 +186,14 @@ class OpenSearchDocumentIndex(DocumentIndex):
         lines: list[str] = []
         for record in request.records:
             chunk = record.chunk
+            heading_paths = tuple(
+                dict.fromkeys(
+                    " / ".join(span.locator.heading_path)
+                    for span in chunk.source_spans
+                    if span.locator.heading_path
+                )
+            )
+            heading_text = "\n".join(heading_paths)
             lines.append(
                 json.dumps(
                     {
@@ -190,6 +210,10 @@ class OpenSearchDocumentIndex(DocumentIndex):
                     {
                         "chunk_id": chunk.chunk_id,
                         "content_text": chunk.content_text,
+                        "heading_text": heading_text,
+                        "identifiers": extract_identifiers(
+                            "\n".join((chunk.content_text, heading_text))
+                        ),
                         "document_content_id": chunk.document_id,
                         "document_id": str(request.document_id),
                         "tenant_id": str(request.tenant_id),

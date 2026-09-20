@@ -15,6 +15,7 @@ from hybrid_rag_search.ingestion.indexing import (
 from hybrid_rag_search.opensearch_index import (
     OpenSearchDocumentIndex,
     OpenSearchIndexManager,
+    extract_identifiers,
     index_mapping,
     physical_index_name,
 )
@@ -53,6 +54,12 @@ def test_index_mapping_and_name_are_versioned() -> None:
     assert properties["embedding"]["method"]["space_type"] == "cosinesimil"  # type: ignore[index]
     assert properties["embedding"]["dimension"] == 384  # type: ignore[index]
     assert properties["source_spans"]["type"] == "nested"  # type: ignore[index]
+    assert properties["heading_text"] == {"type": "text"}  # type: ignore[index]
+    assert properties["identifiers"] == {"type": "keyword"}  # type: ignore[index]
+    assert extract_identifiers("RFC-9110 and ERR_AUTH_42, but no 2026") == (
+        "rfc-9110",
+        "err_auth_42",
+    )
     assert physical_index_name("chunks-v1", "20260919") == "hybrid-rag-chunks-v1-20260919"
     for value in (0, True):
         with pytest.raises(ValueError, match="dimensions"):
@@ -116,6 +123,8 @@ async def test_replace_stages_promotes_and_removes_prior_generation() -> None:
     document = json.loads(staged[1])
     assert document["visibility"] == "staged"
     assert document["source_spans"][0]["page_number"] == 2
+    assert document["heading_text"] == "Login"
+    assert document["identifiers"] == []
     promotion = json.loads(requests[1].content)
     assert promotion["script"]["source"] == "ctx._source.visibility = 'ready'"
     cleanup = json.loads(requests[2].content)

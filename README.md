@@ -4,7 +4,7 @@ A production-style enterprise search and retrieval-augmented generation engine b
 
 The project is intentionally focused on the search system around the language model—not on building another generic “chat with a PDF” interface.
 
-> Status: Day 6 deterministic, source-aware document parsing implemented. The system is designed for reproducible local operation and will not be deployed as a public service.
+> Status: Day 10 BM25 lexical retrieval implemented. The system is designed for reproducible local operation and will not be deployed as a public service.
 
 ## What the system will do
 
