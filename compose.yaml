@@ -51,6 +51,9 @@ services:
       APP_ENV: development
       DATABASE_URL: postgresql://${POSTGRES_USER:-hybrid_rag}:${POSTGRES_PASSWORD:-local-development-only}@postgres:5432/${POSTGRES_DB:-hybrid_rag}
       OPENSEARCH_URL: http://opensearch:9200
+      OPENSEARCH_INDEX_SCHEMA_VERSION: ${OPENSEARCH_INDEX_SCHEMA_VERSION:-chunks-v1}
+      OPENSEARCH_READ_ALIAS: ${OPENSEARCH_READ_ALIAS:-hybrid-rag-chunks-read}
+      OPENSEARCH_WRITE_ALIAS: ${OPENSEARCH_WRITE_ALIAS:-hybrid-rag-chunks-write}
       REDIS_URL: redis://redis:6379/0
       STORAGE_ROOT: /app/data/originals
       TOKENIZER_ROOT: /app/data/tokenizers
