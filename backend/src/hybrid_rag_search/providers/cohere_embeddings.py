@@ -178,6 +178,8 @@ async def configured_cohere_embeddings(
         settings.cohere_embed_model == "embed-english-light-v3.0"
         and settings.cohere_embed_dimensions != 384
     ):
+        # Settings validates this on construction. Keep the guard here because
+        # tests and local scripts can deliberately mutate a Settings instance.
         raise ValueError("embed-english-light-v3.0 requires 384 dimensions")
     async with open_cohere_embeddings(
         api_key=settings.cohere_api_key.get_secret_value(),
