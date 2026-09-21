@@ -3,7 +3,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import AliasChoices, Field, SecretStr
+from pydantic import AliasChoices, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     opensearch_bm25_phrase_boost: float = Field(default=3.0, gt=0)
     opensearch_bm25_identifier_boost: float = Field(default=5.0, gt=0)
     opensearch_bm25_candidate_limit: int = Field(default=20, gt=0)
+    opensearch_dense_candidate_limit: int = Field(default=20, gt=0)
     storage_root: Path = Path(".data/originals")
     tokenizer_root: Path = Path(".data/tokenizers")
     ingestion_artifact_root: Path = Path(".data/ingestion-artifacts")
@@ -52,6 +53,23 @@ class Settings(BaseSettings):
         default=Decimal("0.15"), ge=0, allow_inf_nan=False
     )
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    @model_validator(mode="after")
+    def validate_embedding_model_dimensions(self) -> "Settings":
+        """Reject a known Cohere model/dimension mismatch before an index is built.
+
+        The chunks mapping receives its dimension from this same setting, so this
+        is the configuration boundary where the model and index are paired. New
+        Cohere models remain configurable; their dimensions are validated by the
+        provider response and the dense retriever at runtime.
+        """
+
+        if (
+            self.cohere_embed_model == "embed-english-light-v3.0"
+            and self.cohere_embed_dimensions != 384
+        ):
+            raise ValueError("embed-english-light-v3.0 requires 384 dimensions")
+        return self
 
 
 @lru_cache
