@@ -5,6 +5,7 @@ import asyncio
 import re
 import time
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -14,6 +15,7 @@ from hybrid_rag_search.chunking.contracts import SourceSpan
 from hybrid_rag_search.config import Settings, get_settings
 from hybrid_rag_search.opensearch_index import extract_identifiers
 from hybrid_rag_search.parsers.contracts import SourceLocator
+from hybrid_rag_search.retrieval_filters import RetrievalFilters
 
 _QUOTED_PHRASE = re.compile(r'"([^\"]*)"')
 _IDENTIFIER = re.compile(
@@ -191,6 +193,10 @@ class OpenSearchBM25Retriever:
         *,
         tenant_id: UUID,
         collection_id: UUID | None = None,
+        source_type: str | None = None,
+        author: str | None = None,
+        source_date_from: datetime | None = None,
+        source_date_to: datetime | None = None,
         limit: int | None = None,
         debug: bool = False,
     ) -> LexicalRetrievalResponse:
@@ -200,9 +206,17 @@ class OpenSearchBM25Retriever:
             raise ValueError("BM25 collection ID must be a UUID when present")
         if not isinstance(debug, bool):
             raise ValueError("BM25 debug flag must be boolean")
+        search_filters = RetrievalFilters(
+            tenant_id,
+            collection_id,
+            source_type,
+            author,
+            source_date_from,
+            source_date_to,
+        )
         parsed = parse_lexical_query(query_text)
         candidate_limit = self._candidate_limit(limit)
-        filters = self._filter_values(tenant_id, collection_id)
+        filters = search_filters.trace_values()
         if parsed.is_empty:
             return LexicalRetrievalResponse(
                 (),
@@ -213,7 +227,7 @@ class OpenSearchBM25Retriever:
         response = await self._request(
             "POST",
             f"/{self.read_alias}/_search",
-            json=self._search_body(parsed, tenant_id, collection_id, candidate_limit, debug),
+            json=self._search_body(parsed, search_filters, candidate_limit, debug),
         )
         elapsed_ms = (time.perf_counter() - started) * 1_000
         payload = response.json()
@@ -252,16 +266,10 @@ class OpenSearchBM25Retriever:
     def _search_body(
         self,
         parsed: ParsedLexicalQuery,
-        tenant_id: UUID,
-        collection_id: UUID | None,
+        filters: RetrievalFilters,
         candidate_limit: int,
         debug: bool,
     ) -> dict[str, object]:
-        filters = [
-            {"term": {field: value}}
-            for field, value in self._filter_values(tenant_id, collection_id).items()
-        ]
-
         clauses: list[dict[str, object]] = []
         if parsed.ordinary_terms:
             clauses.append(
@@ -317,19 +325,12 @@ class OpenSearchBM25Retriever:
             ],
             "query": {
                 "bool": {
-                    "filter": filters,
+                    "filter": filters.clauses(),
                     "should": clauses,
                     "minimum_should_match": 1,
                 }
             },
         }
-
-    @staticmethod
-    def _filter_values(tenant_id: UUID, collection_id: UUID | None) -> dict[str, str]:
-        filters = {"tenant_id": str(tenant_id), "visibility": "ready"}
-        if collection_id is not None:
-            filters["collection_id"] = str(collection_id)
-        return filters
 
     @staticmethod
     def _candidate_count(hits: dict[str, object], fallback: int) -> int:

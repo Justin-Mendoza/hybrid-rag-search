@@ -5,6 +5,7 @@ import asyncio
 import math
 import time
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -24,6 +25,7 @@ from hybrid_rag_search.providers.embeddings import (
     EmbeddingRequest,
     EmbeddingResult,
 )
+from hybrid_rag_search.retrieval_filters import RetrievalFilters
 
 
 @dataclass(frozen=True)
@@ -32,7 +34,7 @@ class DenseRetrievalConfig:
 
     embedding_model: str = "embed-english-light-v3.0"
     embedding_dimensions: int = 384
-    index_schema_version: str = "chunks-v2"
+    index_schema_version: str = "chunks-v3"
     candidate_limit: int = 20
 
     def __post_init__(self) -> None:
@@ -148,6 +150,10 @@ class OpenSearchDenseRetriever:
         *,
         tenant_id: UUID,
         collection_id: UUID | None = None,
+        source_type: str | None = None,
+        author: str | None = None,
+        source_date_from: datetime | None = None,
+        source_date_to: datetime | None = None,
         limit: int | None = None,
         debug: bool = False,
     ) -> DenseRetrievalResponse:
@@ -158,9 +164,17 @@ class OpenSearchDenseRetriever:
         if not isinstance(debug, bool):
             raise ValueError("Dense debug flag must be boolean")
 
+        search_filters = RetrievalFilters(
+            tenant_id,
+            collection_id,
+            source_type,
+            author,
+            source_date_from,
+            source_date_to,
+        )
         normalized_query = normalize_dense_query(query_text)
         candidate_limit = self._candidate_limit(limit)
-        filters = OpenSearchBM25Retriever._filter_values(tenant_id, collection_id)
+        filters = search_filters.trace_values()
         if not normalized_query:
             return DenseRetrievalResponse(
                 (),
@@ -188,7 +202,7 @@ class OpenSearchDenseRetriever:
         response = await self._request(
             "POST",
             f"/{self.read_alias}/_search",
-            json=self._search_body(vector, tenant_id, collection_id, candidate_limit, debug),
+            json=self._search_body(vector, search_filters, candidate_limit, debug),
         )
         opensearch_elapsed_ms = (time.perf_counter() - opensearch_started) * 1_000
         payload = response.json()
@@ -248,17 +262,10 @@ class OpenSearchDenseRetriever:
     def _search_body(
         self,
         vector: tuple[float, ...],
-        tenant_id: UUID,
-        collection_id: UUID | None,
+        filters: RetrievalFilters,
         candidate_limit: int,
         debug: bool,
     ) -> dict[str, object]:
-        filters = [
-            {"term": {field: value}}
-            for field, value in OpenSearchBM25Retriever._filter_values(
-                tenant_id, collection_id
-            ).items()
-        ]
         return {
             "size": candidate_limit,
             "track_total_hits": True,
@@ -280,7 +287,7 @@ class OpenSearchDenseRetriever:
                     "embedding": {
                         "vector": list(vector),
                         "k": candidate_limit,
-                        "filter": {"bool": {"filter": filters}},
+                        "filter": {"bool": {"filter": filters.clauses()}},
                     }
                 }
             },

@@ -66,9 +66,10 @@ async def test_paraphrase_fixture_recovers_ready_tenant_scoped_chunk_from_real_o
         embedding_model="semantic-fixture-v1",
         embedding_dimensions=3,
         embedding_adapter="fake",
+        source_metadata={},
         records=(IndexRecord(chunk, ChunkEmbedding(chunk.chunk_id, (1.0, 0.0, 0.0))),),
     )
-    index_name = f"hybrid-rag-chunks-v2-dense-{uuid4().hex[:12]}"
+    index_name = f"hybrid-rag-chunks-v3-dense-{uuid4().hex[:12]}"
     manager = OpenSearchIndexManager(
         settings.opensearch_url,
         "unused-read-alias",
@@ -84,7 +85,7 @@ async def test_paraphrase_fixture_recovers_ready_tenant_scoped_chunk_from_real_o
             settings.opensearch_url,
             index_name,
             ParaphraseFixtureProvider(),
-            DenseRetrievalConfig("semantic-fixture-v1", 3, "chunks-v2", 20),
+            DenseRetrievalConfig("semantic-fixture-v1", 3, "chunks-v3", 20),
         )
         response = await retriever.search(
             "  How long does a password recovery link last?  ",
@@ -97,7 +98,7 @@ async def test_paraphrase_fixture_recovers_ready_tenant_scoped_chunk_from_real_o
         assert response.trace.embedding_adapter == "fake"
         assert response.trace.embedding_model == "semantic-fixture-v1"
         assert response.trace.embedding_dimensions == 3
-        assert response.trace.index_schema_version == "chunks-v2"
+        assert response.trace.index_schema_version == "chunks-v3"
         assert response.trace.candidate_count == 1
         denied = await retriever.search(
             "How long does a password recovery link last?", tenant_id=uuid4()

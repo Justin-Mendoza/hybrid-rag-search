@@ -28,6 +28,7 @@ from hybrid_rag_search.models.content import Document, DocumentStatus, Ingestion
 @dataclass(frozen=True)
 class IndexDocumentMetadata:
     collection_id: UUID
+    source_metadata: dict[str, object]
 
 
 class IndexDocumentResolver(Protocol):
@@ -46,6 +47,7 @@ class PostgresIndexDocumentResolver:
         statement = select(
             Document.collection_id,
             Document.content_hash,
+            Document.source_metadata,
             Document.status,
         ).where(Document.id == claimed.document_id, Document.tenant_id == claimed.tenant_id)
         async with self.sessions() as session:
@@ -57,7 +59,10 @@ class PostgresIndexDocumentResolver:
             raise DocumentUnavailable("Document is deleted or deleting")
         if row["content_hash"] != claimed.content_hash:
             raise ValueError("Document content no longer matches the ingestion job")
-        return IndexDocumentMetadata(row["collection_id"])
+        source_metadata = row["source_metadata"]
+        if not isinstance(source_metadata, dict):
+            raise ValueError("Document source metadata must be an object")
+        return IndexDocumentMetadata(row["collection_id"], source_metadata)
 
 
 def _checkpoint_reference(
@@ -136,6 +141,7 @@ class IndexStageRunner:
             embedding_model=embeddings.model,
             embedding_dimensions=embeddings.dimensions,
             embedding_adapter=embeddings.adapter,
+            source_metadata=metadata.source_metadata,
             records=tuple(
                 IndexRecord(chunk, embedding)
                 for chunk, embedding in zip(chunks, embeddings.embeddings, strict=True)

@@ -44,6 +44,12 @@ def replacement_request() -> ReplaceDocumentRequest:
         embedding_model="embed-test",
         embedding_dimensions=2,
         embedding_adapter="fake",
+        source_metadata={
+            "source_type": "Email",
+            "author": " Ada  Lovelace ",
+            "source_date": "2026-09-24T09:30:00-04:00",
+            "thread_id": "thread-7",
+        },
         records=(IndexRecord(chunk, ChunkEmbedding(chunk.chunk_id, (0.1, 0.2))),),
     )
 
@@ -56,6 +62,9 @@ def test_index_mapping_and_name_are_versioned() -> None:
     assert properties["source_spans"]["type"] == "nested"  # type: ignore[index]
     assert properties["heading_text"] == {"type": "text"}  # type: ignore[index]
     assert properties["identifiers"] == {"type": "keyword"}  # type: ignore[index]
+    assert properties["source_type"] == {"type": "keyword"}  # type: ignore[index]
+    assert properties["author"] == {"type": "keyword"}  # type: ignore[index]
+    assert properties["source_date"] == {"type": "date"}  # type: ignore[index]
     assert extract_identifiers("RFC-9110 and ERR_AUTH_42, but no 2026") == (
         "rfc-9110",
         "err_auth_42",
@@ -125,6 +134,10 @@ async def test_replace_stages_promotes_and_removes_prior_generation() -> None:
     assert document["source_spans"][0]["page_number"] == 2
     assert document["heading_text"] == "Login"
     assert document["identifiers"] == []
+    assert document["source_type"] == "email"
+    assert document["author"] == "ada lovelace"
+    assert document["source_date"] == "2026-09-24T13:30:00Z"
+    assert document["source_metadata"]["thread_id"] == "thread-7"
     promotion = json.loads(requests[1].content)
     assert promotion["script"]["source"] == "ctx._source.visibility = 'ready'"
     cleanup = json.loads(requests[2].content)

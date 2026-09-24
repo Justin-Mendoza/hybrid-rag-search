@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql://hybrid_rag:local-development-only@localhost:5432/hybrid_rag"
     redis_url: str = "redis://localhost:6379/0"
     opensearch_url: str = "http://localhost:9200"
-    opensearch_index_schema_version: str = "chunks-v2"
+    opensearch_index_schema_version: str = "chunks-v3"
     opensearch_read_alias: str = "hybrid-rag-chunks-read"
     opensearch_write_alias: str = "hybrid-rag-chunks-write"
     opensearch_bm25_content_boost: float = Field(default=1.0, gt=0)

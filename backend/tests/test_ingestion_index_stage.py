@@ -92,7 +92,7 @@ def runner(tmp_path: Path):
         },
     )
     resolver = MagicMock()
-    resolver.resolve = AsyncMock(return_value=IndexDocumentMetadata(collection_id))
+    resolver.resolve = AsyncMock(return_value=IndexDocumentMetadata(collection_id, {}))
     checkpointer = AsyncMock()
     checkpointer.complete_index.return_value = True
     index = FakeDocumentIndex()
@@ -216,6 +216,8 @@ async def test_index_stage_rejects_mismatched_chunk_order(tmp_path: Path) -> Non
 
 
 def resolver(row: dict[str, object] | None):
+    if row is not None:
+        row = {"source_metadata": {}, **row}
     result = MagicMock()
     result.mappings.return_value.one_or_none.return_value = row
     session = AsyncMock()
@@ -236,7 +238,7 @@ async def test_postgres_index_document_resolver_validates_current_document() -> 
             "status": DocumentStatus.PROCESSING,
         }
     )
-    assert await service.resolve(job) == IndexDocumentMetadata(collection_id)
+    assert await service.resolve(job) == IndexDocumentMetadata(collection_id, {})
     sql = str(session.execute.await_args.args[0].compile())
     assert "documents.tenant_id" in sql
     with pytest.raises(ValueError, match="ClaimedJob"):
@@ -263,4 +265,14 @@ async def test_postgres_index_document_resolver_rejects_missing_deleted_or_chang
         }
     )
     with pytest.raises(ValueError, match="no longer matches"):
+        await service.resolve(job)
+    service, _ = resolver(
+        {
+            "collection_id": uuid4(),
+            "content_hash": job.content_hash,
+            "status": DocumentStatus.PROCESSING,
+            "source_metadata": [],
+        }
+    )
+    with pytest.raises(ValueError, match="source metadata"):
         await service.resolve(job)

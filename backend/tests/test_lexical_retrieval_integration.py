@@ -45,9 +45,10 @@ async def test_bm25_recovers_heading_phrase_and_identifier_from_real_opensearch(
         embedding_model="integration-test",
         embedding_dimensions=2,
         embedding_adapter="fake",
+        source_metadata={},
         records=(IndexRecord(chunk, ChunkEmbedding(chunk.chunk_id, (0.1, 0.2))),),
     )
-    index_name = f"hybrid-rag-chunks-v2-lexical-{uuid4().hex[:12]}"
+    index_name = f"hybrid-rag-chunks-v3-lexical-{uuid4().hex[:12]}"
     manager = OpenSearchIndexManager(
         settings.opensearch_url,
         "unused-read-alias",

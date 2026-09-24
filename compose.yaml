@@ -51,7 +51,7 @@ services:
       APP_ENV: development
       DATABASE_URL: postgresql://${POSTGRES_USER:-hybrid_rag}:${POSTGRES_PASSWORD:-local-development-only}@postgres:5432/${POSTGRES_DB:-hybrid_rag}
       OPENSEARCH_URL: http://opensearch:9200
-      OPENSEARCH_INDEX_SCHEMA_VERSION: ${OPENSEARCH_INDEX_SCHEMA_VERSION:-chunks-v2}
+      OPENSEARCH_INDEX_SCHEMA_VERSION: ${OPENSEARCH_INDEX_SCHEMA_VERSION:-chunks-v3}
       OPENSEARCH_READ_ALIAS: ${OPENSEARCH_READ_ALIAS:-hybrid-rag-chunks-read}
       OPENSEARCH_WRITE_ALIAS: ${OPENSEARCH_WRITE_ALIAS:-hybrid-rag-chunks-write}
       OPENSEARCH_BM25_CONTENT_BOOST: ${OPENSEARCH_BM25_CONTENT_BOOST:-1.0}
