@@ -77,7 +77,13 @@ class FakeRerankingProvider:
     def _terms(cls, text: str) -> set[str]:
         return {match.group().casefold() for match in cls._TERM.finditer(text)}
 
-    async def rerank(self, request: RerankRequest) -> RerankResult:
+    async def rerank(
+        self, request: RerankRequest, *, timeout_seconds: float | None = None
+    ) -> RerankResult:
+        if timeout_seconds is not None and (
+            not math.isfinite(timeout_seconds) or timeout_seconds <= 0
+        ):
+            raise ValueError("Rerank timeout must be positive and finite when present")
         query_terms = self._terms(request.query)
         scored = []
         for index, candidate in enumerate(request.candidates):

@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     opensearch_bm25_identifier_boost: float = Field(default=5.0, gt=0)
     opensearch_bm25_candidate_limit: int = Field(default=20, gt=0)
     opensearch_dense_candidate_limit: int = Field(default=20, gt=0)
+    rerank_candidate_limit: int = Field(default=20, gt=0)
+    rerank_result_limit: int = Field(default=10, gt=0)
+    retrieval_deadline_seconds: float = Field(default=8.0, gt=0, allow_inf_nan=False)
     storage_root: Path = Path(".data/originals")
     tokenizer_root: Path = Path(".data/tokenizers")
     ingestion_artifact_root: Path = Path(".data/ingestion-artifacts")
@@ -39,7 +42,7 @@ class Settings(BaseSettings):
         default=None, ge=0, allow_inf_nan=False
     )
     cohere_rerank_model: str = "rerank-v4.0-fast"
-    cohere_rerank_timeout_seconds: float = Field(default=2.0, gt=0, allow_inf_nan=False)
+    cohere_rerank_timeout_seconds: float = Field(default=5.0, gt=0, allow_inf_nan=False)
     cohere_rerank_usd_per_search_unit: Decimal | None = Field(
         default=None, ge=0, allow_inf_nan=False
     )
@@ -55,13 +58,14 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     @model_validator(mode="after")
-    def validate_embedding_model_dimensions(self) -> "Settings":
-        """Reject a known Cohere model/dimension mismatch before an index is built.
+    def validate_cross_field_settings(self) -> "Settings":
+        """Reject incompatible model, index, reranking, and deadline settings.
 
         The chunks mapping receives its dimension from this same setting, so this
         is the configuration boundary where the model and index are paired. New
         Cohere models remain configurable; their dimensions are validated by the
-        provider response and the dense retriever at runtime.
+        provider response and the dense retriever at runtime. Reranking limits
+        and timeouts are likewise validated together at startup.
         """
 
         if (
@@ -69,6 +73,10 @@ class Settings(BaseSettings):
             and self.cohere_embed_dimensions != 384
         ):
             raise ValueError("embed-english-light-v3.0 requires 384 dimensions")
+        if self.rerank_result_limit > self.rerank_candidate_limit:
+            raise ValueError("Rerank result limit cannot exceed the candidate limit")
+        if self.cohere_rerank_timeout_seconds > self.retrieval_deadline_seconds:
+            raise ValueError("Cohere rerank timeout cannot exceed the retrieval deadline")
         return self
 
 

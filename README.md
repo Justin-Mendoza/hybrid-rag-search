@@ -4,7 +4,7 @@ A production-style enterprise search and retrieval-augmented generation engine b
 
 The project is intentionally focused on the search system around the language model—not on building another generic “chat with a PDF” interface.
 
-> Status: Day 12 filtered hybrid retrieval implemented. The system is designed for reproducible local operation and will not be deployed as a public service.
+> Status: Day 13 deadline-aware Cohere reranking implemented. The system is designed for reproducible local operation and will not be deployed as a public service.
 
 ## What the system will do
 
@@ -126,18 +126,19 @@ supported `COHERE_TRIAL_KEY` alias, explicitly authorize the three-call smoke
 suite with `make cohere-smoke`. See the [Day 5 implementation notes](docs/tickets/day-05.md)
 for model decisions, usage metadata, error behavior, and verification evidence.
 
-### Hybrid retrieval
+### Reranked retrieval
 
-Day 12 runs Day 10's BM25 and Day 11's dense retrievers concurrently against
-one tenant-scoped metadata filter contract, then combines their ranks with
-versioned reciprocal-rank fusion (`rrf-v1`). The index stores normalized typed
-fields for source type, author, and source date while preserving the original
-document metadata. This requires a complete `chunks-v3` rebuild.
+Day 13 sends the top 20 Day 12 hybrid candidates to Cohere Rerank and returns
+the top 10 evidence chunks. One absolute deadline covers hybrid retrieval and
+reranking: the default request budget is eight seconds and Cohere receives at
+most five seconds or the smaller remaining budget. Timeout, rate-limit, and
+temporary availability failures return explicitly marked RRF fallback results;
+contract and configuration failures remain visible.
 
 Inspect the library boundary with
-`python -m hybrid_rag_search.hybrid_retrieval --tenant <uuid> 'query'`. After
-`make stack-up`, run `make opensearch-hybrid-test` for the deterministic real
-OpenSearch filter-and-fusion check. See the [Day 12 implementation notes](docs/tickets/day-12.md).
+`python -m hybrid_rag_search.reranked_retrieval --tenant <uuid> 'query'`.
+The existing `make cohere-smoke` command keeps the live rerank call opt-in and
+trial-gated. See the [Day 13 implementation notes](docs/tickets/day-13.md).
 
 ### Document parsing
 

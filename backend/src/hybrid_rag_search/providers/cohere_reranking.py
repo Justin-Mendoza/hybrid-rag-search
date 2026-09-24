@@ -59,7 +59,7 @@ class CohereRerankingProvider:
         client: cohere.AsyncClientV2,
         *,
         model: str,
-        timeout_seconds: float = 2.0,
+        timeout_seconds: float = 5.0,
         usd_per_search_unit: Decimal | None = None,
     ) -> None:
         if not model.strip():
@@ -75,16 +75,23 @@ class CohereRerankingProvider:
         self.timeout_seconds = timeout_seconds
         self.usd_per_search_unit = usd_per_search_unit
 
-    async def rerank(self, request: RerankRequest) -> RerankResult:
+    async def rerank(
+        self, request: RerankRequest, *, timeout_seconds: float | None = None
+    ) -> RerankResult:
         if len(request.candidates) > 10_000:
             raise ProviderError("invalid_request")
+        if timeout_seconds is not None and (
+            not math.isfinite(timeout_seconds) or timeout_seconds <= 0
+        ):
+            raise ValueError("Rerank timeout must be positive and finite when present")
+        effective_timeout = min(self.timeout_seconds, timeout_seconds or self.timeout_seconds)
         options: RequestOptions = {
-            "timeout_in_seconds": math.ceil(self.timeout_seconds),
+            "timeout_in_seconds": math.ceil(effective_timeout),
             "max_retries": 0,
         }
         started = perf_counter()
         try:
-            async with asyncio.timeout(self.timeout_seconds):
+            async with asyncio.timeout(effective_timeout):
                 response = await self.client.rerank(
                     model=self.model,
                     query=request.query,
@@ -154,7 +161,7 @@ async def open_cohere_reranking(
     *,
     api_key: str,
     model: str,
-    timeout_seconds: float = 2.0,
+    timeout_seconds: float = 5.0,
     usd_per_search_unit: Decimal | None = None,
 ) -> AsyncIterator[CohereRerankingProvider]:
     if not api_key.strip():

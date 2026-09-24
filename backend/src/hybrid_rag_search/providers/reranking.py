@@ -70,6 +70,8 @@ class RerankResult:
 
 
 class RerankingProvider(Protocol):
-    async def rerank(self, request: RerankRequest) -> RerankResult:
+    async def rerank(
+        self, request: RerankRequest, *, timeout_seconds: float | None = None
+    ) -> RerankResult:
         """Return at most top_n candidates in descending relevance order."""
         ...

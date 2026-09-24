@@ -1,7 +1,7 @@
 import asyncio
 import json
 from decimal import Decimal
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import cohere
 import httpx
@@ -67,6 +67,23 @@ async def test_sdk_request_identity_usage_and_cost(
     assert result.usage.latency_ms == 125
     assert result.usage.estimated_cost_usd == expected
     assert result.usage.usd_per_search_unit == price
+
+
+@pytest.mark.anyio
+async def test_caller_timeout_budget_caps_configured_timeout() -> None:
+    client = AsyncMock(spec=cohere.AsyncClientV2)
+    response = MagicMock()
+    response.model_dump.return_value = {"results": [{"index": 0, "relevance_score": 0.5}]}
+    client.rerank.return_value = response
+    provider = CohereRerankingProvider(client, model="test", timeout_seconds=5)
+    await provider.rerank(REQUEST, timeout_seconds=0.25)
+    assert client.rerank.await_args.kwargs["request_options"] == {
+        "timeout_in_seconds": 1,
+        "max_retries": 0,
+    }
+    for invalid in (0, float("inf")):
+        with pytest.raises(ValueError, match="timeout"):
+            await provider.rerank(REQUEST, timeout_seconds=invalid)
 
 
 @pytest.mark.anyio
@@ -269,7 +286,7 @@ async def test_factories_close_sdk_and_use_baseline(monkeypatch: pytest.MonkeyPa
     settings = Settings()
     async with configured_cohere_reranking(settings) as provider:
         assert provider.model == "rerank-v4.0-fast"
-        assert provider.timeout_seconds == 2
+        assert provider.timeout_seconds == 5
     settings.cohere_api_key = None
     with pytest.raises(ValueError, match="COHERE_API_KEY"):
         async with configured_cohere_reranking(settings):
