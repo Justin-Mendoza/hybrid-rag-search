@@ -4,7 +4,7 @@ A production-style enterprise search and retrieval-augmented generation engine b
 
 The project is intentionally focused on the search system around the language model—not on building another generic “chat with a PDF” interface.
 
-> Status: Day 11 dense vector retrieval implemented. The system is designed for reproducible local operation and will not be deployed as a public service.
+> Status: Day 12 filtered hybrid retrieval implemented. The system is designed for reproducible local operation and will not be deployed as a public service.
 
 ## What the system will do
 
@@ -126,17 +126,18 @@ supported `COHERE_TRIAL_KEY` alias, explicitly authorize the three-call smoke
 suite with `make cohere-smoke`. See the [Day 5 implementation notes](docs/tickets/day-05.md)
 for model decisions, usage metadata, error behavior, and verification evidence.
 
-### Retrieval baselines
+### Hybrid retrieval
 
-Day 10's BM25 retriever and Day 11's dense retriever both return the same
-normalized chunk-evidence contract. The dense path normalizes whitespace only,
-embeds the query with Cohere's `search_query` input type, validates the
-configured model and vector dimension, then runs filtered cosine k-NN against
-the ready OpenSearch read alias. Its default candidate budget is 20; adjust it
-locally with `OPENSEARCH_DENSE_CANDIDATE_LIMIT`. Run a live local inspection
-with `python -m hybrid_rag_search.dense_retrieval --tenant <uuid> 'query'`, or
-after `make stack-up`, run `make opensearch-dense-test` for the deterministic
-paraphrase-fixture OpenSearch check. See the [Day 11 implementation notes](docs/tickets/day-11.md).
+Day 12 runs Day 10's BM25 and Day 11's dense retrievers concurrently against
+one tenant-scoped metadata filter contract, then combines their ranks with
+versioned reciprocal-rank fusion (`rrf-v1`). The index stores normalized typed
+fields for source type, author, and source date while preserving the original
+document metadata. This requires a complete `chunks-v3` rebuild.
+
+Inspect the library boundary with
+`python -m hybrid_rag_search.hybrid_retrieval --tenant <uuid> 'query'`. After
+`make stack-up`, run `make opensearch-hybrid-test` for the deterministic real
+OpenSearch filter-and-fusion check. See the [Day 12 implementation notes](docs/tickets/day-12.md).
 
 ### Document parsing
 

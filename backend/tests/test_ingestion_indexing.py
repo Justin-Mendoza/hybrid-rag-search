@@ -61,6 +61,7 @@ def request(
         embedding_model="embed-test",
         embedding_dimensions=2,
         embedding_adapter="fake",
+        source_metadata={},
         records=tuple(
             IndexRecord(item, ChunkEmbedding(item.chunk_id, (float(item.order), 0.0)))
             for item in chunks

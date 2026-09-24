@@ -13,6 +13,7 @@ from hybrid_rag_search.ingestion.indexing import (
     IndexWriteError,
     ReplaceDocumentRequest,
 )
+from hybrid_rag_search.retrieval_filters import IndexedSourceMetadata
 
 _SCHEMA_VERSION = re.compile(r"^[a-z][a-z0-9-]*v[0-9]+$")
 _IDENTIFIER = re.compile(
@@ -55,6 +56,9 @@ def index_mapping(dimensions: int) -> dict[str, object]:
                 "document_id": {"type": "keyword"},
                 "tenant_id": {"type": "keyword"},
                 "collection_id": {"type": "keyword"},
+                "source_type": {"type": "keyword"},
+                "author": {"type": "keyword"},
+                "source_date": {"type": "date"},
                 "content_hash": {"type": "keyword"},
                 "pipeline_version": {"type": "keyword"},
                 "generation_id": {"type": "keyword"},
@@ -184,6 +188,7 @@ class OpenSearchDocumentIndex(DocumentIndex):
 
     def _bulk_body(self, request: ReplaceDocumentRequest) -> bytes:
         lines: list[str] = []
+        metadata = IndexedSourceMetadata.from_document(request.source_metadata)
         for record in request.records:
             chunk = record.chunk
             heading_paths = tuple(
@@ -205,41 +210,41 @@ class OpenSearchDocumentIndex(DocumentIndex):
                     separators=(",", ":"),
                 )
             )
+            source: dict[str, object] = {
+                "chunk_id": chunk.chunk_id,
+                "content_text": chunk.content_text,
+                "heading_text": heading_text,
+                "identifiers": extract_identifiers("\n".join((chunk.content_text, heading_text))),
+                "document_content_id": chunk.document_id,
+                "document_id": str(request.document_id),
+                "tenant_id": str(request.tenant_id),
+                "collection_id": str(request.collection_id),
+                "content_hash": request.content_hash,
+                "pipeline_version": request.pipeline_version,
+                "generation_id": request.generation_id,
+                "visibility": "staged",
+                "chunk_order": chunk.order,
+                "chunk_config_version": chunk.config_version,
+                "embedding_model": request.embedding_model,
+                "embedding_dimensions": request.embedding_dimensions,
+                "embedding_adapter": request.embedding_adapter,
+                "embedding": record.embedding.vector,
+                "source_spans": [
+                    {
+                        "block_number": span.locator.block_number,
+                        "page_number": span.locator.page_number,
+                        "heading_path": list(span.locator.heading_path),
+                        "start_char": span.start_char,
+                        "end_char": span.end_char,
+                    }
+                    for span in chunk.source_spans
+                ],
+                "source_metadata": metadata.original,
+            }
+            source.update(metadata.indexed_fields())
             lines.append(
                 json.dumps(
-                    {
-                        "chunk_id": chunk.chunk_id,
-                        "content_text": chunk.content_text,
-                        "heading_text": heading_text,
-                        "identifiers": extract_identifiers(
-                            "\n".join((chunk.content_text, heading_text))
-                        ),
-                        "document_content_id": chunk.document_id,
-                        "document_id": str(request.document_id),
-                        "tenant_id": str(request.tenant_id),
-                        "collection_id": str(request.collection_id),
-                        "content_hash": request.content_hash,
-                        "pipeline_version": request.pipeline_version,
-                        "generation_id": request.generation_id,
-                        "visibility": "staged",
-                        "chunk_order": chunk.order,
-                        "chunk_config_version": chunk.config_version,
-                        "embedding_model": request.embedding_model,
-                        "embedding_dimensions": request.embedding_dimensions,
-                        "embedding_adapter": request.embedding_adapter,
-                        "embedding": record.embedding.vector,
-                        "source_spans": [
-                            {
-                                "block_number": span.locator.block_number,
-                                "page_number": span.locator.page_number,
-                                "heading_path": list(span.locator.heading_path),
-                                "start_char": span.start_char,
-                                "end_char": span.end_char,
-                            }
-                            for span in chunk.source_spans
-                        ],
-                        "source_metadata": {},
-                    },
+                    source,
                     separators=(",", ":"),
                 )
             )

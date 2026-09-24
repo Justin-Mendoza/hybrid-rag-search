@@ -1,5 +1,6 @@
 """Application-owned document replacement boundary for search indexes."""
 
+import json
 import re
 from dataclasses import dataclass
 from typing import Protocol
@@ -8,6 +9,7 @@ from uuid import UUID
 from hybrid_rag_search.chunking.contracts import Chunk
 from hybrid_rag_search.chunking.identity import DocumentContentIdentity, stable_digest
 from hybrid_rag_search.ingestion.artifact_payloads import ChunkEmbedding
+from hybrid_rag_search.retrieval_filters import IndexedSourceMetadata
 
 
 class IndexWriteError(RuntimeError):
@@ -51,6 +53,7 @@ class ReplaceDocumentRequest:
     embedding_model: str
     embedding_dimensions: int
     embedding_adapter: str
+    source_metadata: dict[str, object]
     records: tuple[IndexRecord, ...]
 
     def __post_init__(self) -> None:
@@ -104,6 +107,7 @@ class ReplaceDocumentRequest:
             len(record.embedding.vector) != self.embedding_dimensions for record in self.records
         ):
             raise ValueError("Index vectors must match the declared dimensions")
+        IndexedSourceMetadata.from_document(self.source_metadata)
 
     @property
     def generation_id(self) -> str:
@@ -116,6 +120,9 @@ class ReplaceDocumentRequest:
             self.pipeline_version,
             self.embedding_model,
             str(self.embedding_dimensions),
+            json.dumps(
+                self.source_metadata, ensure_ascii=False, separators=(",", ":"), sort_keys=True
+            ),
         )
         return f"idxgen_{digest}"
 
