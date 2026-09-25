@@ -1,4 +1,4 @@
-.PHONY: setup dev backend-dev frontend-dev stack-up stack-down stack-status stack-logs stack-reset db-upgrade db-downgrade db-current db-revision db-seed db-test tokenizer-setup ingestion-recover index-rebuild-start index-rebuild-promote opensearch-lexical-test opensearch-dense-test opensearch-hybrid-test cohere-smoke format format-check lint typecheck test build check
+.PHONY: setup dev backend-dev frontend-dev stack-up stack-down stack-status stack-logs stack-reset db-upgrade db-downgrade db-current db-revision db-seed db-test tokenizer-setup ingestion-recover index-rebuild-start index-rebuild-promote opensearch-lexical-test opensearch-dense-test opensearch-hybrid-test cohere-smoke scifact-download scifact-validate format format-check lint typecheck test build check
 
 setup:
 	python3 -m venv .venv
@@ -87,6 +87,12 @@ opensearch-hybrid-test:
 
 cohere-smoke:
 	RUN_LIVE_COHERE_TESTS=1 .venv/bin/pytest backend/tests/test_cohere_live.py -m live --no-cov -s
+
+scifact-download:
+	.venv/bin/python -m hybrid_rag_search.evaluation.scifact download
+
+scifact-validate:
+	.venv/bin/python -m hybrid_rag_search.evaluation.scifact validate
 
 format:
 	.venv/bin/ruff format backend

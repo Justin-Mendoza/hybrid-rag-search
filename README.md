@@ -4,7 +4,7 @@ A production-style enterprise search and retrieval-augmented generation engine b
 
 The project is intentionally focused on the search system around the language model—not on building another generic “chat with a PDF” interface.
 
-> Status: Day 13 deadline-aware Cohere reranking implemented. The system is designed for reproducible local operation and will not be deployed as a public service.
+> Status: Day 14 versioned evaluation datasets implemented. The system is designed for reproducible local operation and will not be deployed as a public service.
 
 ## What the system will do
 
@@ -110,6 +110,15 @@ For the complete local development environment, run `make dev`. It installs depe
 To run the applications separately, use `make setup` once, followed by `make backend-dev` (API at `http://localhost:8000`) and `make frontend-dev` (web at `http://localhost:3000`). Run every CI quality gate with `make check`.
 
 Focused commands are available as `make format`, `make format-check`, `make lint`, `make typecheck`, `make test`, and `make build`. Copy `.env.example` to `.env` for local configuration; never commit credentials.
+
+### Evaluation datasets
+
+The committed synthetic workspace is immediately available for deterministic
+tests. SciFact is an explicit, verified download: run `make scifact-download`,
+then `make scifact-validate`. Both datasets use the same manifest, corpus,
+queries, and graded-judgments contract described in
+[`datasets/README.md`](datasets/README.md). Day 15 will run retrieval metrics over
+these fixtures; Day 14 only establishes trustworthy inputs.
 
 ### Model providers
 
