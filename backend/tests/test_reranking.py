@@ -101,3 +101,13 @@ async def test_unicode_terms_are_case_insensitive() -> None:
         RerankRequest("CAFÉ benefits", (candidate("match", "Café BENEFITS"),), 1)
     )
     assert result.items[0].relevance_score == 1.0
+
+
+@pytest.mark.anyio
+async def test_fake_validates_optional_timeout_budget() -> None:
+    provider = FakeRerankingProvider()
+    request = RerankRequest("query", (candidate(),), 1)
+    assert await provider.rerank(request, timeout_seconds=0.5)
+    for invalid in (0, float("inf")):
+        with pytest.raises(ValueError, match="timeout"):
+            await provider.rerank(request, timeout_seconds=invalid)
