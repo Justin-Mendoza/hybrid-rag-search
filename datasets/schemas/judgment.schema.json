@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hybrid-rag-search.local/schemas/evaluation-judgment-v1.json",
+  "title": "Evaluation judgment JSONL record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["query_id", "target_type", "target_id", "relevance_grade"],
+  "properties": {
+    "query_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+    "target_type": {"enum": ["document", "chunk"]},
+    "target_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+    "relevance_grade": {"type": "integer", "minimum": 0, "maximum": 3}
+  }
+}
