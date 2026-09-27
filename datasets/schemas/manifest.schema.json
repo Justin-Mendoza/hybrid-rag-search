@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hybrid-rag-search.local/schemas/evaluation-manifest-v1.json",
+  "title": "Evaluation dataset manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "dataset_id", "name", "version", "purpose", "description", "source", "files"],
+  "properties": {
+    "schema_version": {"const": "evaluation-dataset-v1"},
+    "dataset_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+    "name": {"type": "string", "minLength": 1},
+    "version": {"type": "string", "minLength": 1},
+    "purpose": {"const": "evaluation"},
+    "description": {"type": "string", "minLength": 1},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "url": {"type": ["string", "null"]},
+        "archive_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "license": {"type": ["string", "null"]}
+      }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": {"enum": ["corpus.jsonl", "queries.jsonl", "judgments.jsonl"]},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    }
+  }
+}

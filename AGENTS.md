@@ -40,7 +40,7 @@ Before implementation planning, perform a scope check: confirm that each propose
 - Use small diagrams, request/response examples, or data-flow examples when they make a relationship easier to understand.
 - Surface assumptions and tradeoffs instead of silently selecting defaults.
 - Distinguish clearly between product decisions, architectural decisions, and implementation details.
-- During the decision phase, present proposed choices one at a time rather than as a batch. For each choice, give brief context about what it controls, explain the main tradeoff in plain language, make a recommendation, and wait for the owner's response before introducing the next choice. Do not begin implementation until the decision phase is complete and the resulting plan is approved.
+- During the decision phase, present proposed choices one at a time rather than as a batch. Before recommending an option, explain the concrete problem or limitation being addressed, where it appears in the current system or ticket flow, and what the decision will control downstream. Then explain the main tradeoff in plain language, make a recommendation, and wait for the owner's response before introducing the next choice. Do not begin implementation until the decision phase is complete and the resulting plan is approved.
 - Keep decision context concise: usually one short paragraph or a few bullets. Add more depth only when the owner asks for it.
 - Explain test failures and fixes rather than only reporting that checks pass.
 - At each checkpoint, give the owner one or two useful things to inspect or try locally.

@@ -1,0 +1,14 @@
+{
+  "schema_version": "evaluation-dataset-v1",
+  "dataset_id": "synthetic-workspace",
+  "name": "Synthetic workspace retrieval cases",
+  "version": "1",
+  "purpose": "evaluation",
+  "description": "Small controlled corpus covering exact match, paraphrase, stale versions, and conflicting evidence.",
+  "source": {"name": "Hybrid RAG Search project", "license": "project-internal"},
+  "files": [
+    {"path": "corpus.jsonl", "sha256": "f88d309e8d848c75580779b6bfaf1920fc112d64e097532bad62040be2685951"},
+    {"path": "queries.jsonl", "sha256": "80673988ffb6f3ac87c4b4d7951c9c9e1323c2a3c66ff6d151b18309950cb90d"},
+    {"path": "judgments.jsonl", "sha256": "e17767deebf6a17b28522183949b0fb34ddf4f40b110593f602a91dda433a08a"}
+  ]
+}

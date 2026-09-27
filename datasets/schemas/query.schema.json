@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hybrid-rag-search.local/schemas/evaluation-query-v1.json",
+  "title": "Evaluation query JSONL record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "text"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+    "text": {"type": "string", "minLength": 1},
+    "category": {"type": ["string", "null"], "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+    "expected_answer": {"type": ["string", "null"]},
+    "key_facts": {"type": "array", "items": {"type": "string"}},
+    "metadata_filters": {"type": "object"}
+  }
+}
