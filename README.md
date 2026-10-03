@@ -4,7 +4,7 @@ A production-style enterprise search and retrieval-augmented generation engine b
 
 The project is intentionally focused on the search system around the language model—not on building another generic “chat with a PDF” interface.
 
-> Status: Day 14 versioned evaluation datasets implemented. The system is designed for reproducible local operation and will not be deployed as a public service.
+> Status: Day 15 retrieval evaluation implemented and verified on synthetic workspace and a fixed SciFact subset; the full SciFact benchmark is deferred. The system is designed for reproducible local operation and will not be deployed as a public service.
 
 ## What the system will do
 
@@ -122,7 +122,11 @@ queries, and graded-judgments contract described in
 Recall@5/10/50, MRR@10, and nDCG@10. The shared search boundary is also available
 through `POST /debug/search`. Preparation reuses completed ingestion work in an
 isolated evaluation scope. See the [Day 15 runbook](docs/tickets/day-15.md) for
-reproduction, API examples, pacing, and the full SciFact quota constraint.
+reproduction, API examples, and pacing. Day 15 uses the committed
+`scifact-subset` fixture (500 documents, 30 queries); full SciFact is deferred.
+Run `make evaluation-prepare EVAL_DATASET=scifact-subset`, then
+`make evaluation-run EVAL_DATASET=scifact-subset`. Regenerate the fixture with
+`make scifact-download scifact-subset`.
 
 ### Model providers
 

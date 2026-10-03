@@ -16,7 +16,7 @@ router = APIRouter()
 
 class DebugSearchRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    dataset: Literal["synthetic-workspace", "scifact"]
+    dataset: Literal["synthetic-workspace", "scifact", "scifact-subset"]
     query: str = Field(min_length=1, max_length=4096)
     mode: SearchMode
 

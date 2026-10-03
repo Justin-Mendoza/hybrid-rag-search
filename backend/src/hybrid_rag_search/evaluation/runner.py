@@ -17,6 +17,7 @@ from fastapi.encoders import jsonable_encoder
 
 from hybrid_rag_search.config import Settings, get_settings
 from hybrid_rag_search.evaluation.corpus import (
+    DATASETS,
     evaluation_index_settings,
     evaluation_scope,
     prepare_corpus,
@@ -259,10 +260,10 @@ def main() -> None:  # pragma: no cover - exercised through documented CLI comma
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
     prepare = sub.add_parser("prepare")
-    prepare.add_argument("dataset", choices=["synthetic-workspace", "scifact"])
+    prepare.add_argument("dataset", choices=list(DATASETS))
     prepare.add_argument("--document-delay", type=float, default=0)
     run = sub.add_parser("run")
-    run.add_argument("dataset", choices=["synthetic-workspace", "scifact"])
+    run.add_argument("dataset", choices=list(DATASETS))
     run.add_argument("--output", type=Path, required=True)
     run.add_argument("--query-delay", type=float, default=0)
     run.add_argument(

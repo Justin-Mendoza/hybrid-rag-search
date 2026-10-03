@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from hybrid_rag_search.config import Settings
 from hybrid_rag_search.database import async_database_url
 from hybrid_rag_search.evaluation.datasets import EvaluationDataset, load_dataset
-from hybrid_rag_search.evaluation.scifact import DEFAULT_OUTPUT
+from hybrid_rag_search.evaluation.scifact import DEFAULT_OUTPUT, SUBSET_OUTPUT
 from hybrid_rag_search.ingestion.jobs import IngestionJobService
 from hybrid_rag_search.ingestion.pipeline import JobRunResult
 from hybrid_rag_search.ingestion.runtime import configured_pipeline_version, run_configured_job
@@ -27,6 +27,7 @@ EVALUATION_TENANT = UUID("00000000-0000-4000-8000-000000000201")
 DATASETS = {
     "synthetic-workspace": Path("datasets/synthetic-workspace/v1"),
     "scifact": DEFAULT_OUTPUT,
+    "scifact-subset": SUBSET_OUTPUT,
 }
 
 

@@ -15,11 +15,16 @@ The machine-readable contracts are in `schemas/`. The committed
 `synthetic-workspace/v1/` fixture covers exact matching, paraphrases, stale
 versions, and conflicting evidence.
 
-SciFact is public benchmark data and is intentionally not committed or downloaded
+The full SciFact corpus is public benchmark data and is not committed or downloaded
 during setup or tests. Run `make scifact-download` to fetch the pinned official
 BEIR archive, verify its SHA-256, and deterministically convert its test split
 under `datasets/.cache/`. Run `make scifact-validate` to validate the cached copy
 and print its version, record counts, corpus hash, and dataset hash.
+
+The committed [SciFact subset](scifact-subset/README.md) is the Day 15 pipeline
+fixture: 500 documents, 30 queries, and every judgment for those queries.
+`make scifact-subset` regenerates it from the cached full source. Its manifest
+pins the selection recipe and source; it is not a full SciFact benchmark.
 
 Generated benchmark data and ordinary reports remain ignored. Selected baseline
 JSON and Markdown reports are committed under `docs/evaluation/`. See the

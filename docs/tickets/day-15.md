@@ -6,15 +6,21 @@ The evaluation runner prepares a reusable, isolated corpus, searches it through
 four existing retrieval modes, and saves document-level quality metrics and
 per-query comparisons. The debug HTTP endpoint exposes that same search boundary.
 
-The full ticket remains in progress until both live datasets and repeated-run
-tolerances are verified. The [synthetic baseline](../evaluation/README.md)
-passes all four live modes with no fallback and zero observed repeat metric
-drift after compaction. Full SciFact
-preparation is paused: the configured trial key has a documented 1,000-call
-monthly allowance, while the existing ingestion pipeline makes at least one
-embedding call per document across SciFact's 5,183 documents. Preparation
-completed 480 documents before being paused; their artifacts and index records
-are reusable. One interrupted job still requires lease recovery before resuming.
+Day 15 is complete within the owner-approved revised scope: synthetic workspace
+and a fixed SciFact subset, with the full benchmark explicitly deferred.
+Both [selected baselines](../evaluation/README.md) pass all four live modes with
+no fallback and zero observed repeat metric drift after index compaction.
+The subset has 500 documents, 771 indexed chunks, 30 queries, and 34 judgments.
+Its debug HTTP request also passed with real retrieval and reranking.
+
+Trial preparation stopped after 291 subset documents with `provider_rate_limited`.
+After the owner configured a production key, preparation reused completed jobs
+and finished the remaining 209 documents. Both full subset runs then succeeded.
+The saved trial error does not distinguish monthly quota from a short-term limit.
+
+The full SciFact preparation remains paused and deferred: 480 completed documents
+and one interrupted job are preserved in a separate scope. That job would need
+lease recovery before any future resumption; no full-corpus baseline is claimed.
 
 ```text
 versioned corpus → original storage + PostgreSQL documents/jobs
@@ -41,7 +47,15 @@ POST /debug/search ───────→ shared search → chunks + diagnosti
 - Completed jobs and their parse/chunk/embed artifacts are reused. Changing
   judgments or metric code does not change corpus identity. Changing corpus,
   parser, chunking, embedding, or schema configuration creates a new scope.
-- Live Cohere baselines target both synthetic workspace and full BEIR SciFact.
+- Revised scope: live Cohere baselines target synthetic workspace and a fixed
+  SciFact subset (500 documents, 30 queries, 34 judgments). Full SciFact is deferred.
+  Selection uses salted SHA-256 ordering of query IDs, includes every judgment
+  target for selected queries, then fills to 500 documents by salted document-ID
+  hash ordering. The versioned manifest records the parent dataset hash and recipe.
+  This is a pipeline baseline, not the standard full SciFact benchmark. Its smaller
+  distractor pool changes retrieval difficulty; do not compare its scores directly
+  with published full-corpus results. It uses a separate index and does not reuse
+  embeddings from the partial full corpus; that corpus remains untouched.
   Controlled CI fixtures and fake providers test behavior without network calls.
 - Recall@5/10/50 and MRR@10 treat grades 1–3 as relevant; grade 0 and unjudged
   documents earn no credit. nDCG@10 uses gains `2^grade - 1` and logarithmic rank
@@ -68,7 +82,8 @@ make db-upgrade
 make tokenizer-setup
 make evaluation-prepare
 make scifact-download
-make evaluation-prepare EVAL_DATASET=scifact
+make scifact-subset
+make evaluation-prepare EVAL_DATASET=scifact-subset
 ```
 
 Preparation runs the existing jobs inline. It creates its own evaluation index
@@ -96,7 +111,11 @@ make evaluation-run EVAL_OUTPUT=.data/evaluation/synthetic-repeat
   .data/evaluation/synthetic-repeat/report.json
 ```
 
-Use `EVAL_DATASET=scifact` for the full cached test split. Preparation pacing is
+Use `EVAL_DATASET=scifact-subset` for the agreed pipeline baseline. The committed
+`datasets/scifact-subset/v1/` fixture needs no download to prepare or evaluate;
+`make scifact-download scifact-subset` regenerates it from the pinned full archive.
+`EVAL_DATASET=scifact` remains available for the deferred full test split.
+Preparation pacing is
 controlled by `EVAL_DOCUMENT_DELAY` (default 1 second before unfinished jobs),
 and runs by `EVAL_QUERY_DELAY` (default 7 seconds before each query). Pacing is
 explicit CLI behavior, not a retry subsystem. Trial reranking allows 10 requests
@@ -116,7 +135,9 @@ timings reflect each configuration's actual query-time work.
 
 Deterministic CI metric results must match exactly. The synthetic live tolerance
 is `1e-12`, with zero observed drift in two completed compacted-index runs.
-The full SciFact tolerance remains unverified. Latency is
+The SciFact subset also has zero observed drift across two complete runs; use
+`1e-12` absolute metric tolerance for this fixed index/model/configuration.
+The full SciFact benchmark is explicitly deferred. Latency is
 descriptive; local load and provider timings need not match. The comparison
 command refuses datasets, configurations, indexes, models, or adapters that
 do not match and reports the largest per-query and aggregate metric difference.
@@ -142,6 +163,12 @@ The Compose API mounts `datasets/` read-only so it can validate the same corpus
 contract used by the local runner.
 
 ## Verification
+
+This machine's existing `.venv/bin/python` was unusable, so the live commands
+and backend checks used `/private/tmp/hybrid-rag-day15-venv/bin/python` and the
+matching pytest/ruff/mypy executables (Python 3.12.1, backend dev dependencies).
+The documented Make targets assume a working project `.venv`; the temporary
+environment was not committed or substituted into repository configuration.
 
 ```bash
 make evaluation-test
