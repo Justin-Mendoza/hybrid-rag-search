@@ -1,7 +1,8 @@
 # Datasets
 
 Evaluation data is separate from the product demo and is loaded into a dedicated
-evaluation tenant when a benchmark runs. Every dataset uses the same four-file
+evaluation tenant during explicit preparation, then reused for benchmark runs.
+Every dataset uses the same four-file
 contract:
 
 - `manifest.json` pins its version and SHA-256 file hashes.
@@ -20,4 +21,6 @@ BEIR archive, verify its SHA-256, and deterministically convert its test split
 under `datasets/.cache/`. Run `make scifact-validate` to validate the cached copy
 and print its version, record counts, corpus hash, and dataset hash.
 
-Generated benchmark data and evaluation reports do not belong in version control.
+Generated benchmark data and ordinary reports remain ignored. Selected baseline
+JSON and Markdown reports are committed under `docs/evaluation/`. See the
+[Day 15 runbook](../docs/tickets/day-15.md) for preparation and evaluation.
