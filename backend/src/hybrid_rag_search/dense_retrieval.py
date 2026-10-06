@@ -150,6 +150,7 @@ class OpenSearchDenseRetriever:
         *,
         tenant_id: UUID,
         collection_id: UUID | None = None,
+        collection_ids: tuple[UUID, ...] | None = None,
         source_type: str | None = None,
         author: str | None = None,
         source_date_from: datetime | None = None,
@@ -171,11 +172,12 @@ class OpenSearchDenseRetriever:
             author,
             source_date_from,
             source_date_to,
+            collection_ids,
         )
         normalized_query = normalize_dense_query(query_text)
         candidate_limit = self._candidate_limit(limit)
         filters = search_filters.trace_values()
-        if not normalized_query:
+        if not normalized_query or search_filters.collection_ids == ():
             return DenseRetrievalResponse(
                 (),
                 self._trace(
@@ -218,6 +220,16 @@ class OpenSearchDenseRetriever:
             OpenSearchBM25Retriever._result_from_hit(hit, rank)
             for rank, hit in enumerate(raw_hits, start=1)
         )
+        if any(
+            item.tenant_id != tenant_id
+            or (collection_id is not None and item.collection_id != collection_id)
+            or (
+                search_filters.collection_ids is not None
+                and item.collection_id not in search_filters.collection_ids
+            )
+            for item in results
+        ):
+            raise RetrievalError("retrieval_scope_violation", retryable=False)
         return DenseRetrievalResponse(
             results,
             self._trace(

@@ -16,65 +16,103 @@ DEMO_COLLECTION_ID = uuid.UUID("00000000-0000-4000-8000-000000000104")
 DEMO_GRANT_ID = uuid.UUID("00000000-0000-4000-8000-000000000105")
 
 
+ENGINEERING_USER_ID = uuid.UUID("00000000-0000-4000-8000-000000000112")
+HR_USER_ID = uuid.UUID("00000000-0000-4000-8000-000000000122")
+RESTRICTED_USER_ID = uuid.UUID("00000000-0000-4000-8000-000000000132")
+SECOND_USER_ID = uuid.UUID("00000000-0000-4000-8000-000000000142")
+SECOND_TENANT_ID = uuid.UUID("00000000-0000-4000-8000-000000000141")
+ENGINEERING_COLLECTION_ID = uuid.UUID("00000000-0000-4000-8000-000000000114")
+HR_COLLECTION_ID = uuid.UUID("00000000-0000-4000-8000-000000000124")
+SECOND_COLLECTION_ID = uuid.UUID("00000000-0000-4000-8000-000000000144")
+DEMO_USER_IDS = (DEMO_USER_ID, ENGINEERING_USER_ID, HR_USER_ID, RESTRICTED_USER_ID, SECOND_USER_ID)
+
+
 def seed_statements() -> list[Insert]:
-    return [
-        insert(Tenant)
-        .values(id=DEMO_TENANT_ID, name="Acme Demo", slug="acme-demo")
-        .on_conflict_do_update(
-            index_elements=[Tenant.id], set_={"name": "Acme Demo", "slug": "acme-demo"}
-        ),
-        insert(User)
-        .values(id=DEMO_USER_ID, email="admin@acme.test", display_name="Acme Admin")
-        .on_conflict_do_update(
-            index_elements=[User.id],
-            set_={"email": "admin@acme.test", "display_name": "Acme Admin"},
-        ),
-        insert(Membership)
-        .values(
-            id=DEMO_MEMBERSHIP_ID,
-            tenant_id=DEMO_TENANT_ID,
-            user_id=DEMO_USER_ID,
-            role="owner",
-        )
-        .on_conflict_do_update(
-            index_elements=[Membership.id],
-            set_={"tenant_id": DEMO_TENANT_ID, "user_id": DEMO_USER_ID, "role": "owner"},
-        ),
-        insert(Collection)
-        .values(
-            id=DEMO_COLLECTION_ID,
-            tenant_id=DEMO_TENANT_ID,
-            name="Company Handbook",
-            slug="company-handbook",
-            description="Seeded collection for local development.",
-        )
-        .on_conflict_do_update(
-            index_elements=[Collection.id],
-            set_={
-                "tenant_id": DEMO_TENANT_ID,
-                "name": "Company Handbook",
-                "slug": "company-handbook",
-                "description": "Seeded collection for local development.",
-            },
-        ),
-        insert(CollectionGrant)
-        .values(
-            id=DEMO_GRANT_ID,
-            tenant_id=DEMO_TENANT_ID,
-            collection_id=DEMO_COLLECTION_ID,
-            membership_id=DEMO_MEMBERSHIP_ID,
-            permission="manage",
-        )
-        .on_conflict_do_update(
-            index_elements=[CollectionGrant.id],
-            set_={
-                "tenant_id": DEMO_TENANT_ID,
-                "collection_id": DEMO_COLLECTION_ID,
-                "membership_id": DEMO_MEMBERSHIP_ID,
-                "permission": "manage",
-            },
-        ),
+    # Fixed IDs preserve the original Day 3 records and make reseeding repeatable.
+    tenants = [
+        {"id": DEMO_TENANT_ID, "name": "Acme Demo", "slug": "acme-demo"},
+        {"id": SECOND_TENANT_ID, "name": "Other Demo", "slug": "other-demo"},
     ]
+    users = [
+        {"id": user_id, "email": email, "display_name": name}
+        for user_id, email, name in (
+            (DEMO_USER_ID, "admin@acme.test", "Acme Admin"),
+            (ENGINEERING_USER_ID, "engineering@acme.test", "Acme Engineering"),
+            (HR_USER_ID, "hr@acme.test", "Acme HR"),
+            (RESTRICTED_USER_ID, "restricted@acme.test", "Acme Restricted"),
+            (SECOND_USER_ID, "member@other.test", "Other Member"),
+        )
+    ]
+    memberships = [
+        {
+            "id": uuid.UUID(int=user_id.int + 1),
+            "tenant_id": tenant_id,
+            "user_id": user_id,
+            "role": role,
+        }
+        for user_id, tenant_id, role in (
+            (DEMO_USER_ID, DEMO_TENANT_ID, "owner"),
+            (ENGINEERING_USER_ID, DEMO_TENANT_ID, "member"),
+            (HR_USER_ID, DEMO_TENANT_ID, "member"),
+            (RESTRICTED_USER_ID, DEMO_TENANT_ID, "member"),
+            (SECOND_USER_ID, SECOND_TENANT_ID, "member"),
+        )
+    ]
+    collections = [
+        {
+            "id": collection_id,
+            "tenant_id": tenant_id,
+            "name": name,
+            "slug": slug,
+            "description": "Seeded collection for local development.",
+        }
+        for collection_id, tenant_id, name, slug in (
+            (DEMO_COLLECTION_ID, DEMO_TENANT_ID, "Company Handbook", "company-handbook"),
+            (ENGINEERING_COLLECTION_ID, DEMO_TENANT_ID, "Engineering", "engineering"),
+            (HR_COLLECTION_ID, DEMO_TENANT_ID, "HR", "hr"),
+            (SECOND_COLLECTION_ID, SECOND_TENANT_ID, "Other Handbook", "handbook"),
+        )
+    ]
+    grants = [
+        {
+            "id": grant_id,
+            "tenant_id": tenant_id,
+            "collection_id": collection_id,
+            "membership_id": uuid.UUID(int=user_id.int + 1),
+            "permission": permission,
+        }
+        for grant_id, tenant_id, collection_id, user_id, permission in (
+            (DEMO_GRANT_ID, DEMO_TENANT_ID, DEMO_COLLECTION_ID, DEMO_USER_ID, "manage"),
+            (uuid.UUID(int=0x201), DEMO_TENANT_ID, DEMO_COLLECTION_ID, ENGINEERING_USER_ID, "read"),
+            (
+                uuid.UUID(int=0x202),
+                DEMO_TENANT_ID,
+                ENGINEERING_COLLECTION_ID,
+                ENGINEERING_USER_ID,
+                "write",
+            ),
+            (uuid.UUID(int=0x203), DEMO_TENANT_ID, DEMO_COLLECTION_ID, HR_USER_ID, "read"),
+            (uuid.UUID(int=0x204), DEMO_TENANT_ID, HR_COLLECTION_ID, HR_USER_ID, "manage"),
+            (uuid.UUID(int=0x205), DEMO_TENANT_ID, DEMO_COLLECTION_ID, RESTRICTED_USER_ID, "read"),
+            (uuid.UUID(int=0x206), SECOND_TENANT_ID, SECOND_COLLECTION_ID, SECOND_USER_ID, "read"),
+        )
+    ]
+    statements: list[Insert] = []
+    for model, rows in (
+        (Tenant, tenants),
+        (User, users),
+        (Membership, memberships),
+        (Collection, collections),
+        (CollectionGrant, grants),
+    ):
+        statement = insert(model).values(rows)
+        statements.append(
+            statement.on_conflict_do_update(
+                index_elements=[model.id],
+                set_={key: getattr(statement.excluded, key) for key in rows[0] if key != "id"},
+            )
+        )
+    return statements
 
 
 async def seed_database(database_url: str | None = None) -> None:
@@ -88,7 +126,7 @@ async def seed_database(database_url: str | None = None) -> None:
 
 def main() -> None:
     asyncio.run(seed_database())
-    print("Seeded Acme Demo tenant, owner, collection, and grant.")
+    print("Seeded Acme Demo and Other Demo: five identities, four collections, and grants.")
 
 
 if __name__ == "__main__":  # pragma: no cover

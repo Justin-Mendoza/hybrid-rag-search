@@ -92,12 +92,19 @@ class RetrievalFilters:
     author: str | None = None
     source_date_from: datetime | None = None
     source_date_to: datetime | None = None
+    collection_ids: tuple[UUID, ...] | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.tenant_id, UUID):
             raise ValueError("Retrieval tenant ID must be a UUID")
         if self.collection_id is not None and not isinstance(self.collection_id, UUID):
             raise ValueError("Retrieval collection ID must be a UUID when present")
+        if self.collection_ids is not None:
+            if not isinstance(self.collection_ids, tuple) or any(
+                not isinstance(value, UUID) for value in self.collection_ids
+            ):
+                raise ValueError("Retrieval collection IDs must be a tuple of UUIDs")
+            object.__setattr__(self, "collection_ids", tuple(sorted(set(self.collection_ids))))
         for field, label in (("source_type", "Source type"), ("author", "Author")):
             value = getattr(self, field)
             if value is not None:
@@ -121,6 +128,12 @@ class RetrievalFilters:
         ]
         if self.collection_id is not None:
             clauses.append({"term": {"collection_id": str(self.collection_id)}})
+        if self.collection_ids is not None:
+            clauses.append(
+                {"terms": {"collection_id": [str(value) for value in self.collection_ids]}}
+                if self.collection_ids
+                else {"match_none": {}}
+            )
         if self.source_type is not None:
             clauses.append({"term": {"source_type": self.source_type}})
         if self.author is not None:
@@ -141,6 +154,8 @@ class RetrievalFilters:
         }
         if self.collection_id is not None:
             values["collection_id"] = str(self.collection_id)
+        if self.collection_ids is not None:
+            values["collection_ids"] = ",".join(str(value) for value in self.collection_ids)
         if self.source_type is not None:
             values["source_type"] = self.source_type
         if self.author is not None:

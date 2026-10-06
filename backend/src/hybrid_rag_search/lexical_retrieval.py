@@ -193,6 +193,7 @@ class OpenSearchBM25Retriever:
         *,
         tenant_id: UUID,
         collection_id: UUID | None = None,
+        collection_ids: tuple[UUID, ...] | None = None,
         source_type: str | None = None,
         author: str | None = None,
         source_date_from: datetime | None = None,
@@ -213,11 +214,12 @@ class OpenSearchBM25Retriever:
             author,
             source_date_from,
             source_date_to,
+            collection_ids,
         )
         parsed = parse_lexical_query(query_text)
         candidate_limit = self._candidate_limit(limit)
         filters = search_filters.trace_values()
-        if parsed.is_empty:
+        if parsed.is_empty or search_filters.collection_ids == ():
             return LexicalRetrievalResponse(
                 (),
                 RetrievalTrace(parsed, 0, 0.0, tenant_id, collection_id, filters, self.config, {}),
@@ -242,6 +244,16 @@ class OpenSearchBM25Retriever:
         results = tuple(
             self._result_from_hit(hit, rank) for rank, hit in enumerate(raw_hits, start=1)
         )
+        if any(
+            item.tenant_id != tenant_id
+            or (collection_id is not None and item.collection_id != collection_id)
+            or (
+                search_filters.collection_ids is not None
+                and item.collection_id not in search_filters.collection_ids
+            )
+            for item in results
+        ):
+            raise RetrievalError("retrieval_scope_violation", retryable=False)
         return LexicalRetrievalResponse(
             results,
             RetrievalTrace(
