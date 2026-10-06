@@ -1,4 +1,4 @@
-"""One evaluation search boundary shared by HTTP and the benchmark runner."""
+"""Isolated evaluation search boundary for the local benchmark runner."""
 
 from contextlib import AsyncExitStack
 from dataclasses import asdict

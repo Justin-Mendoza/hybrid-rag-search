@@ -1,7 +1,7 @@
 import json
 from contextlib import asynccontextmanager
 from typing import Any
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import httpx
 import pytest
@@ -9,13 +9,11 @@ from fastapi.testclient import TestClient
 
 from hybrid_rag_search.config import Settings
 from hybrid_rag_search.dense_retrieval import DenseRetrievalConfig, OpenSearchDenseRetriever
-from hybrid_rag_search.evaluation import api
 from hybrid_rag_search.evaluation import search as module
 from hybrid_rag_search.evaluation.corpus import evaluation_scope, selected_dataset
 from hybrid_rag_search.evaluation.search import MODES, EvaluationSearch
 from hybrid_rag_search.lexical_retrieval import BM25Config, OpenSearchBM25Retriever, RetrievalError
 from hybrid_rag_search.main import create_app
-from hybrid_rag_search.providers.errors import ProviderError
 from hybrid_rag_search.providers.fake import FakeEmbeddingProvider, FakeRerankingProvider
 
 
@@ -31,6 +29,7 @@ async def test_four_modes_use_fake_adapters_and_scope_before_reranking(
     document = next(iter(scope.document_ids))
     requests: list[dict[str, Any]] = []
     corrupt = False
+    foreign_document = False
 
     def respond(request: httpx.Request) -> httpx.Response:
         body = json.loads(request.content)
@@ -45,7 +44,7 @@ async def test_four_modes_use_fake_adapters_and_scope_before_reranking(
                         "chunk_id": f"chunk-{number}",
                         "tenant_id": str(uuid4() if corrupt else scope.tenant_id),
                         "collection_id": str(scope.collection_id),
-                        "document_id": document,
+                        "document_id": str(uuid4()) if foreign_document else document,
                         "document_content_id": "doc_" + "a" * 64,
                         "content_text": "expense policy",
                         "source_spans": [
@@ -116,6 +115,10 @@ async def test_four_modes_use_fake_adapters_and_scope_before_reranking(
         with pytest.raises(ValueError, match="Unsupported"):
             await search.search(dataset, "query", "bm25", {"tenant_id": str(uuid4())})
         corrupt = True
+        with pytest.raises(RetrievalError, match="retrieval_scope_violation"):
+            await search.search(dataset, "query", "bm25")
+        corrupt = False
+        foreign_document = True
         with pytest.raises(ValueError, match="outside"):
             await search.search(dataset, "query", "bm25")
     assert requests
@@ -124,58 +127,8 @@ async def test_four_modes_use_fake_adapters_and_scope_before_reranking(
         assert str(scope.tenant_id) in serialized and str(scope.collection_id) in serialized
 
 
-def test_debug_endpoint_validates_scope_and_all_modes(monkeypatch: pytest.MonkeyPatch) -> None:
-    dataset = selected_dataset("synthetic-workspace")
-    monkeypatch.setattr(api, "selected_dataset", lambda _: dataset)
-    settings = Settings(_env_file=None)
-    monkeypatch.setattr(api, "get_settings", lambda: settings)
-
-    async def prepared(*args: object) -> int:
-        return 8
-
-    class Search:
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, *args: object) -> None:
-            pass
-
-        async def search(self, dataset, query, mode, **kwargs):
-            return {"mode": mode, "chunks": [], "trace": {}}
-
-    monkeypatch.setattr(api, "verify_prepared", prepared)
-    monkeypatch.setattr(api, "EvaluationSearch", lambda _: Search())
+def test_evaluation_debug_http_route_is_retired() -> None:
     with TestClient(create_app()) as client:
-        request = {"dataset": "synthetic-workspace", "query": "expense policy", "mode": "bm25"}
-        for mode in MODES:
-            response = client.post("/debug/search", json={**request, "mode": mode})
-            assert response.status_code == 200 and response.json()["mode"] == mode
         assert (
-            client.post(
-                "/debug/search", json={**request, "tenant_id": str(UUID(int=1))}
-            ).status_code
-            == 422
+            client.post("/debug/search", json={"dataset": "synthetic-workspace"}).status_code == 404
         )
-        assert (
-            client.post("/debug/search", json={**request, "dataset": "../notes.txt"}).status_code
-            == 422
-        )
-        settings = settings.model_copy(update={"app_env": "production"})
-        assert client.post("/debug/search", json=request).status_code == 404
-        settings = settings.model_copy(update={"app_env": "development"})
-
-        async def fail(*args: object) -> int:
-            raise ValueError("not prepared")
-
-        monkeypatch.setattr(api, "verify_prepared", fail)
-        assert client.post("/debug/search", json=request).status_code == 409
-        for error in (
-            RetrievalError("opensearch_unavailable", retryable=True),
-            ProviderError("unavailable"),
-        ):
-
-            async def unavailable(*args: object, error=error) -> int:
-                raise error
-
-            monkeypatch.setattr(api, "verify_prepared", unavailable)
-            assert client.post("/debug/search", json=request).status_code == 503

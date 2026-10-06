@@ -34,6 +34,7 @@ class LexicalRetriever(Protocol):
         *,
         tenant_id: UUID,
         collection_id: UUID | None = None,
+        collection_ids: tuple[UUID, ...] | None = None,
         source_type: str | None = None,
         author: str | None = None,
         source_date_from: datetime | None = None,
@@ -50,6 +51,7 @@ class DenseRetriever(Protocol):
         *,
         tenant_id: UUID,
         collection_id: UUID | None = None,
+        collection_ids: tuple[UUID, ...] | None = None,
         source_type: str | None = None,
         author: str | None = None,
         source_date_from: datetime | None = None,
@@ -134,6 +136,7 @@ class HybridRetriever:
         *,
         tenant_id: UUID,
         collection_id: UUID | None = None,
+        collection_ids: tuple[UUID, ...] | None = None,
         source_type: str | None = None,
         author: str | None = None,
         source_date_from: datetime | None = None,
@@ -153,6 +156,7 @@ class HybridRetriever:
             author,
             source_date_from,
             source_date_to,
+            collection_ids,
         )
         started = time.perf_counter()
         lexical, dense = await asyncio.gather(
@@ -166,6 +170,11 @@ class HybridRetriever:
                 source_date_to=filters.source_date_to,
                 limit=self.config.candidate_limit,
                 debug=debug,
+                **(
+                    {"collection_ids": filters.collection_ids}
+                    if filters.collection_ids is not None
+                    else {}
+                ),
             ),
             self.dense.search(
                 query_text,
@@ -177,6 +186,11 @@ class HybridRetriever:
                 source_date_to=filters.source_date_to,
                 limit=self.config.candidate_limit,
                 debug=debug,
+                **(
+                    {"collection_ids": filters.collection_ids}
+                    if filters.collection_ids is not None
+                    else {}
+                ),
             ),
         )
         results = self._fuse(lexical.results, dense.results, result_limit)

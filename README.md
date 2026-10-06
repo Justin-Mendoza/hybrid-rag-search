@@ -4,7 +4,7 @@ A production-style enterprise search system built to explore the engineering beh
 
 The project intentionally focuses on the **search system around the language model**, rather than building another generic “chat with a PDF” application.
 
-> **Current status:** Retrieval, hybrid ranking, neural reranking, ingestion, parsing, storage, infrastructure, and versioned evaluation datasets are implemented. Retrieval benchmarking is the next milestone, followed by cited answer generation and adaptive retrieval.
+> **Current status:** Day 16 demo identities and tenant/collection authorization are implemented. Day 15 retrieval baselines are verified on the synthetic workspace and a fixed SciFact subset; full SciFact is deferred. Next: collection, document, permission, and job APIs. Identity verification is simulated; authorization is enforced.
 
 ---
 
@@ -400,8 +400,8 @@ then `make scifact-validate`. Both datasets use the same manifest, corpus,
 queries, and graded-judgments contract described in
 [`datasets/README.md`](datasets/README.md). Run `make evaluation-prepare`, then
 `make evaluation-run` to compare BM25, dense, hybrid, and hybrid-plus-rerank with
-Recall@5/10/50, MRR@10, and nDCG@10. The shared search boundary is also available
-through `POST /debug/search`. Preparation reuses completed ingestion work in an
+Recall@5/10/50, MRR@10, and nDCG@10. The benchmark CLI uses isolated evaluation data; application search uses
+`POST /v1/search` with a selected demo identity. Preparation reuses completed ingestion work in an
 isolated evaluation scope. See the [Day 15 runbook](docs/tickets/day-15.md) for
 reproduction, API examples, and pacing. Day 15 uses the committed
 `scifact-subset` fixture (500 documents, 30 queries); full SciFact is deferred.
@@ -561,7 +561,7 @@ Each numbered "Day" represents approximately one focused 2–4 hour engineering 
 
 ### Completed Foundation
 
-**Days 1–14**
+**Days 1–16**
 
 Implemented work includes:
 
@@ -576,22 +576,20 @@ Implemented work includes:
 - vector retrieval
 - hybrid RRF retrieval
 - neural reranking
-- versioned evaluation datasets
+- versioned evaluation datasets and verified synthetic/SciFact-subset baselines
+- demo identities and database-backed tenant/collection authorization
 
 ### Next Milestone
 
-**Day 15**
+**Day 17**
 
-Run reproducible retrieval benchmarks across the evaluation datasets and establish measured baselines for:
-
-- BM25
-- dense retrieval
-- hybrid retrieval
-- hybrid + reranking
+Build collection, document, permission, and job management APIs on the Day 16
+permission policy. See the [Day 16 runbook](docs/tickets/day-16.md) for demo
+identities, API examples, and authorization verification.
 
 ### Upcoming
 
-**Days 16–22**
+**Days 17–22**
 
 Cited-answer product:
 

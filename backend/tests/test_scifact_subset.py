@@ -5,7 +5,6 @@ from pathlib import Path
 import pytest
 
 from hybrid_rag_search.evaluation import scifact
-from hybrid_rag_search.evaluation.api import DebugSearchRequest
 from hybrid_rag_search.evaluation.corpus import selected_dataset
 from hybrid_rag_search.evaluation.datasets import load_dataset
 
@@ -52,9 +51,8 @@ def test_subset_cli_and_default_output(tmp_path: Path, monkeypatch: pytest.Monke
     assert len(load_dataset(tmp_path / "subset").corpus) == 500
 
 
-def test_registered_subset_is_available_to_debug_api() -> None:
-    request = DebugSearchRequest(dataset="scifact-subset", query="claim", mode="dense")
-    assert len(selected_dataset(request.dataset).corpus) == 500
+def test_registered_subset_remains_available_to_evaluation_runner() -> None:
+    assert len(selected_dataset("scifact-subset").corpus) == 500
 
 
 def test_selection_ignores_input_order_and_retains_complete_judgments(

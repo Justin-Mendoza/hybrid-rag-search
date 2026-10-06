@@ -144,6 +144,10 @@ do not match and reports the largest per-query and aggregate metric difference.
 
 ## Debug HTTP API
 
+Historical Day 15 interface: Day 16 retires `/debug/search` and adds authorized
+`/v1/search`. Use the [Day 16 runbook](day-16.md) for the current HTTP contract.
+The evaluation CLI and committed baselines remain available.
+
 Start `make backend-dev`, then:
 
 ```bash
