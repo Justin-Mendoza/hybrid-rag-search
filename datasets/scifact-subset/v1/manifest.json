@@ -1,0 +1,28 @@
+{
+  "dataset_id": "scifact-subset",
+  "description": "Pipeline baseline, not full BEIR SciFact. Parent dataset hash: 8303e432cee1f32cbaf8bf99604d9a407384c531c2d9c1fa12ae0ccbeab843ac. 30 lowest SHA-256(scifact-subset-v1:query ID) queries; all their judgments; fill to 500 documents by the same salted hash ordering; output sorted by ID.",
+  "files": [
+    {
+      "path": "corpus.jsonl",
+      "sha256": "c05084c8828f33d70a6d7c072c9c617d65777a3c77fdc11bd4cf60a8db92a1e0"
+    },
+    {
+      "path": "judgments.jsonl",
+      "sha256": "475e68fd2ac04e5141303f269ce068803c6b36e20f5a4bd22d214d47d61d6e56"
+    },
+    {
+      "path": "queries.jsonl",
+      "sha256": "012912e10fa058cb51bedab1f73145729e15c025d4ab33ce1fe4be16af72011e"
+    }
+  ],
+  "name": "SciFact pipeline subset",
+  "purpose": "evaluation",
+  "schema_version": "evaluation-dataset-v1",
+  "source": {
+    "archive_sha256": "536e14446a0ba56ed1398ab1055f39fe852686ecad24a6306c80c490fa8e0165",
+    "license": "CC BY-NC 2.0",
+    "name": "BEIR SciFact",
+    "url": "https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/scifact.zip"
+  },
+  "version": "scifact-subset-v1"
+}

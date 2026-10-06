@@ -94,6 +94,24 @@ scifact-download:
 scifact-validate:
 	.venv/bin/python -m hybrid_rag_search.evaluation.scifact validate
 
+EVAL_DATASET ?= synthetic-workspace
+.PHONY: scifact-subset
+scifact-subset:
+	.venv/bin/python -m hybrid_rag_search.evaluation.scifact subset
+.PHONY: evaluation-prepare evaluation-run evaluation-test
+EVAL_OUTPUT ?= .data/evaluation/$(EVAL_DATASET)
+EVAL_DOCUMENT_DELAY ?= 1
+EVAL_QUERY_DELAY ?= 7
+
+evaluation-prepare:
+	.venv/bin/python -m hybrid_rag_search.evaluation.runner prepare $(EVAL_DATASET) --document-delay $(EVAL_DOCUMENT_DELAY)
+
+evaluation-run:
+	.venv/bin/python -m hybrid_rag_search.evaluation.runner run $(EVAL_DATASET) --output $(EVAL_OUTPUT) --query-delay $(EVAL_QUERY_DELAY) --cache-state "Prepared static index; caches not deliberately flushed; provider cache unknown"
+
+evaluation-test:
+	.venv/bin/pytest backend/tests/test_evaluation_metrics.py backend/tests/test_evaluation_runner.py backend/tests/test_evaluation_search.py backend/tests/test_evaluation_corpus.py backend/tests/test_scifact_subset.py --no-cov
+
 format:
 	.venv/bin/ruff format backend
 	.venv/bin/ruff check --fix backend

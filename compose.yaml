@@ -73,6 +73,7 @@ services:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     volumes:
       - ./backend/src:/app/src:ro
+      - ./datasets:/app/datasets:ro
       - document_storage:/app/data
     depends_on: &backend_dependencies
       postgres:

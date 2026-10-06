@@ -394,7 +394,20 @@ Install dependencies, start the development environment, and open the frontend:
 make dev
 ```
 
-The frontend runs at:
+The committed synthetic workspace is immediately available for deterministic
+tests. SciFact is an explicit, verified download: run `make scifact-download`,
+then `make scifact-validate`. Both datasets use the same manifest, corpus,
+queries, and graded-judgments contract described in
+[`datasets/README.md`](datasets/README.md). Run `make evaluation-prepare`, then
+`make evaluation-run` to compare BM25, dense, hybrid, and hybrid-plus-rerank with
+Recall@5/10/50, MRR@10, and nDCG@10. The shared search boundary is also available
+through `POST /debug/search`. Preparation reuses completed ingestion work in an
+isolated evaluation scope. See the [Day 15 runbook](docs/tickets/day-15.md) for
+reproduction, API examples, and pacing. Day 15 uses the committed
+`scifact-subset` fixture (500 documents, 30 queries); full SciFact is deferred.
+Run `make evaluation-prepare EVAL_DATASET=scifact-subset`, then
+`make evaluation-run EVAL_DATASET=scifact-subset`. Regenerate the fixture with
+`make scifact-download scifact-subset`.
 
 ```text
 http://localhost:3000
