@@ -3,6 +3,7 @@ from typing import Literal
 from fastapi import FastAPI, Response, status
 from pydantic import BaseModel
 
+from hybrid_rag_search.answer_api import router as answer_router
 from hybrid_rag_search.api import router as product_router
 from hybrid_rag_search.api_errors import install_errors
 from hybrid_rag_search.config import get_settings
@@ -25,6 +26,7 @@ def create_app() -> FastAPI:
     app = FastAPI(title="Hybrid RAG Search API", version="0.1.0")
     install_errors(app)
     app.include_router(product_router)
+    app.include_router(answer_router)
     app.include_router(management_router)
 
     async def live() -> HealthResponse:

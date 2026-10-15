@@ -6,7 +6,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from decimal import Decimal
 from time import perf_counter
-from typing import Literal
+from typing import Literal, TypedDict
 
 import cohere
 import httpx
@@ -18,11 +18,13 @@ from cohere.types.chat_message_v2 import (
     SystemChatMessageV2,
     UserChatMessageV2,
 )
+from cohere.types.document import Document
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from hybrid_rag_search.config import Settings
 from hybrid_rag_search.providers.errors import ProviderError
 from hybrid_rag_search.providers.generation import (
+    GenerationCitation,
     GenerationFinishReason,
     GenerationRequest,
     GenerationResult,
@@ -31,14 +33,34 @@ from hybrid_rag_search.providers.generation import (
 )
 
 
+class _EvidenceArguments(TypedDict, total=False):
+    documents: list[Document]
+
+
 class _TextContent(BaseModel):
     model_config = ConfigDict(strict=True)
     type: Literal["text"]
     text: str
 
 
+class _DocumentSource(BaseModel):
+    model_config = ConfigDict(strict=True)
+    type: Literal["document"]
+    id: str
+
+
+class _Citation(BaseModel):
+    model_config = ConfigDict(strict=True)
+    start: int
+    end: int
+    text: str
+    sources: list[_DocumentSource]
+    type: Literal["TEXT_CONTENT"]
+
+
 class _AssistantMessage(BaseModel):
     content: list[_TextContent]
+    citations: list[_Citation] | None = None
 
 
 class _TokenUsage(BaseModel):
@@ -121,6 +143,11 @@ class CohereGenerationProvider:
             "timeout_in_seconds": math.ceil(self.timeout_seconds),
             "max_retries": 0,
         }
+        evidence_arguments: _EvidenceArguments = {}
+        if request.documents:
+            evidence_arguments["documents"] = [
+                Document(id=item.id, data={"text": item.text}) for item in request.documents
+            ]
         started = perf_counter()
         try:
             async with asyncio.timeout(self.timeout_seconds):
@@ -130,6 +157,7 @@ class CohereGenerationProvider:
                     max_tokens=request.max_output_tokens,
                     temperature=self.temperature,
                     request_options=options,
+                    **evidence_arguments,
                 )
         except (TimeoutError, httpx.TimeoutException):
             raise ProviderError("timeout", retryable=True) from None
@@ -175,6 +203,12 @@ class CohereGenerationProvider:
             ),
             model=self.model,
             adapter="cohere",
+            citations=tuple(
+                GenerationCitation(
+                    item.start, item.end, item.text, tuple(source.id for source in item.sources)
+                )
+                for item in parsed.message.citations or []
+            ),
             usage=GenerationUsage(
                 input_tokens=tokens.input_tokens if tokens else None,
                 output_tokens=tokens.output_tokens if tokens else None,

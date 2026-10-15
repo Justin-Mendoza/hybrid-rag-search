@@ -1,4 +1,4 @@
-"""Small text-generation contract; grounding and citations belong to Day 18."""
+"""Text generation with optional request-bound evidence and native citations."""
 
 import math
 from dataclasses import dataclass
@@ -31,9 +31,28 @@ class GenerationMessage:
 
 
 @dataclass(frozen=True)
+class GenerationDocument:
+    id: str
+    text: str
+
+    def __post_init__(self) -> None:
+        if not self.id.strip() or not self.text.strip():
+            raise ValueError("Generation document ID and text must be nonblank")
+
+
+@dataclass(frozen=True)
+class GenerationCitation:
+    start: int
+    end: int
+    text: str
+    source_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class GenerationRequest:
     messages: tuple[GenerationMessage, ...]
     max_output_tokens: int
+    documents: tuple[GenerationDocument, ...] = ()
 
     def __post_init__(self) -> None:
         if not isinstance(self.messages, tuple) or not self.messages:
@@ -44,6 +63,12 @@ class GenerationRequest:
             raise ValueError("Generation messages must contain a user message")
         if type(self.max_output_tokens) is not int or self.max_output_tokens <= 0:
             raise ValueError("Generation max_output_tokens must be a positive integer")
+        if not isinstance(self.documents, tuple) or not all(
+            isinstance(document, GenerationDocument) for document in self.documents
+        ):
+            raise ValueError("Generation documents must be a tuple of GenerationDocument values")
+        if len({document.id for document in self.documents}) != len(self.documents):
+            raise ValueError("Generation document IDs must be unique")
 
 
 @dataclass(frozen=True)
@@ -65,6 +90,7 @@ class GenerationResult:
     model: str
     adapter: Literal["fake", "cohere"]
     usage: GenerationUsage = GenerationUsage()
+    citations: tuple[GenerationCitation, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.text.strip() or not self.model.strip():

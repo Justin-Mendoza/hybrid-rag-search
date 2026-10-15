@@ -141,3 +141,7 @@ check: format-check lint typecheck test build
 .PHONY: management-test
 management-test:
 	.venv/bin/pytest backend/tests/test_management.py backend/tests/test_authorization_api.py --no-cov
+
+.PHONY: answer-test
+answer-test:
+	.venv/bin/pytest backend/tests/test_answers.py backend/tests/test_answer_history.py backend/tests/test_cohere_generation.py --no-cov

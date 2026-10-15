@@ -312,3 +312,58 @@ async def test_factories_close_sdk_and_use_baseline(monkeypatch: pytest.MonkeyPa
     with pytest.raises(ValueError, match="COHERE_API_KEY"):
         async with configured_cohere_generation(settings):
             pytest.fail("Missing credentials must fail")
+
+
+@pytest.mark.anyio
+async def test_native_documents_and_citations_use_supplied_ids() -> None:
+    from dataclasses import replace
+
+    from hybrid_rag_search.providers.generation import GenerationDocument
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        assert json.loads(request.content)["documents"] == [
+            {"id": "chunk-a", "data": {"text": "Retries reuse the key."}},
+        ]
+        payload = response()
+        payload["message"]["citations"] = [
+            {
+                "start": 0,
+                "end": 8,
+                "text": "Grounded",
+                "type": "TEXT_CONTENT",
+                "sources": [
+                    {
+                        "type": "document",
+                        "id": "chunk-a",
+                        "document": {"text": "untrusted provider echo"},
+                    }
+                ],
+            }
+        ]
+        return httpx.Response(200, json=payload)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as http:
+        provider = CohereGenerationProvider(
+            cohere.AsyncClientV2(api_key="fake", httpx_client=http), model="fixture"
+        )
+        result = await provider.generate(
+            replace(REQUEST, documents=(GenerationDocument("chunk-a", "Retries reuse the key."),))
+        )
+    assert result.citations[0].source_ids == ("chunk-a",)
+    assert result.citations[0].text == "Grounded"
+    assert not hasattr(result.citations[0], "document")
+
+
+@pytest.mark.anyio
+async def test_malformed_native_citations_are_safe_provider_errors() -> None:
+    def respond(request: httpx.Request) -> httpx.Response:
+        payload = response()
+        payload["message"]["citations"] = [{"start": "wrong", "sources": []}]
+        return httpx.Response(200, json=payload)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as http:
+        provider = CohereGenerationProvider(
+            cohere.AsyncClientV2(api_key="fake", httpx_client=http), model="fixture"
+        )
+        with pytest.raises(ProviderError, match="invalid_response"):
+            await provider.generate(REQUEST)

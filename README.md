@@ -561,7 +561,7 @@ Each numbered "Day" represents approximately one focused 2–4 hour engineering 
 
 ### Completed Foundation
 
-**Days 1–16**
+**Days 1–18**
 
 Implemented work includes:
 
@@ -579,19 +579,21 @@ Implemented work includes:
 - versioned evaluation datasets and verified synthetic/SciFact-subset baselines
 - demo identities and database-backed tenant/collection authorization
 - collection, document, permission, upload, and job management APIs
+- bounded grounded generation, request-bound citations, and author-private answer history
 
 ### Next Milestone
 
-**Day 18**
+**Day 19**
 
-Collection, document, permission, and job management APIs are implemented on the
-Day 16 policy. Read the [Day 17 runbook](docs/tickets/day-17.md) for upload retry
-semantics, permission levels, deletion behavior, and a runnable API walkthrough.
-Next: Day 18 grounded generation and request-bound citations.
+Day 18 adds the internal grounded answer service, validated request-bound citations,
+and author-private answer history. Read the [Day 18 runbook](docs/tickets/day-18.md)
+for evidence budgets, outcome handling, history APIs, and zero-cost verification.
+Day 19 will expose answer creation through streaming and add cancellation.
+Collection/document management remains documented in the [Day 17 runbook](docs/tickets/day-17.md).
 
 ### Upcoming
 
-**Days 18–22**
+**Days 19–22**
 
 Cited-answer product:
 
